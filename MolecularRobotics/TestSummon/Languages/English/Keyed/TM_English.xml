@@ -1411,8 +1411,15 @@ Lethal Blow targets a vital bodypart and strikes it with a precise attack that d
 <TM_PsionicBarrierConversionRate></TM_PsionicBarrierConversionRate>
 <TM_Replicate>Replication Scan</TM_Replicate>
 <TM_ReplicateDesc>The Arcane Forge is capable of scanning a single item and replicating its design. If successful, the forge stores the design blueprints of the scanned item and the item can then be crafted at the forge.\n\nReplicated items require the same material as the standard item to craft, but any research requirements or crafting skill requirements are bypassed. All replicated items require a high intelligence to reproduce and the forge can only be operated by a mage.\n\n*Admin note: the forge can perform scans at no cost, but the active design is replaced by the default recipe if the game is reloaded.\n\nReplication has no use limit, but is benefits most when used to create items you do not have the research to create, to alter the crafting requirements, to take advantage of the dramatically increased crafting speed of the arcane forge or to benefit from the quality bonus when operated by a high level mage.</TM_ReplicateDesc>
-<SPT_DeconstructionNanitesEnabled> Deconstruction Enabled </SPT_DeconstructionNanitesEnabled>
-<SPT_DeconstructionNanitesEnabledDesc>Enables the creation of Deconstruction Nanites</SPT_DeconstructionNanitesEnabledDesc>
+<SPT_deconstructionNanitesEnabled> Deconstruction Enabled </SPT_deconstructionNanitesEnabled>
+<SPT_deconstructionNanitesEnabledDesc>Enables the creation of Deconstruction Nanites</SPT_deconstructionNanitesEnabledDesc>
+<SPT_constructionNanitesEnabled> Construction Enabled </SPT_constructionNanitesEnabled>
+<SPT_constructionNanitesEnabledDesc>Enables the creation of construction Nanites</SPT_constructionNanitesEnabledDesc>
+<SPT_repairNanitesEnabled> Repair Enabled </SPT_repairNanitesEnabled>
+<SPT_repairNanitesEnabledDesc>Enables the creation of repair Nanites</SPT_repairNanitesEnabled>
+<SPT_healNanitesEnabled> Heal Enabled </SPT_healNanitesEnabled>
+<SPT_healNanitesEnabledDesc>Enables the creation of Mending Nanites</SPT_healNanitesEnabledDesc>
+
 <TM_ReplicateDisabled>Replication Disabled</TM_ReplicateDisabled>
 <TM_ReplicateDisabledDesc>Clear bills related to replication and allow a new replication.</TM_ReplicateDisabledDesc>
 
