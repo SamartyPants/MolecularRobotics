@@ -63,11 +63,35 @@ namespace NaniteFactory
             return gizmoList;
         }
 
+        /************************************************************
+         * This function is a temporary function that we can use
+         * to test the nanite functionality. Pressing the ability
+         * on the nanite factory will launch the functionality
+         * 
+         * Eventually this will be a toggle button that will activate
+         * a timer that counts down between operations. Research upgrades 
+         * will improve the timer/speed/carry weight of the nanites. 
+         * Research will also unlock more abilities such as repair/decon/construct/heal
+         */
         private void sendNanites()
         {
 
         }
 
+        //Names and research values/trees subject to change
+        // Research dependancies depicted with . (DOT) notation : Research 1.1 is a child of Research 1. Research 1.1.1 is a child of research 1.1 ... etc
+       
+        
+        //Research Tab -> Molecular Robotics
+
+        // Research 1 : Nanobot creation  // Unlocks the Nanite Factory // 2000 points to start   
+            //Research 1.1 : Nanobot Reconsititution Protocols // Unlocks the nanites ability to repair damaged, claimed structures // 2000
+            //Research 1.2 : Nanobot Construction Protocols // Unlocks the nanites ability to construct things // 2000
+            //Research 1.3 : Nanobot Mending Protocols // Unlocks the nanites ability to heal colonists // 3000
+        //Research 1.2.1 : Nanobot Delivery Protocols // Unlocks the nanites ability to deliver resources to a job site // 3000
+
+       
+        //Also considering research to improve speed/carry/distance etc...
 
 
     }
