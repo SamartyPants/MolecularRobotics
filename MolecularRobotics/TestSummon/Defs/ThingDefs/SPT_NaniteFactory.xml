@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+
+  <!-- ========================= Work tables ==========================-->
+
+  <ThingDef Name="NaniteBenchBase" ParentName="SPT_BuildingBase" Abstract="True">
+    <castEdgeShadows>true</castEdgeShadows>
+    <staticSunShadowHeight>0.20</staticSunShadowHeight>
+    <canOverlapZones>false</canOverlapZones>
+		<building>
+			<workSpeedPenaltyOutdoors>true</workSpeedPenaltyOutdoors>
+			<workSpeedPenaltyTemperature>true</workSpeedPenaltyTemperature>
+		</building>
+		<comps>
+			<li>
+				<compClass>CompReportWorkSpeed</compClass>
+			</li>
+		</comps>
+		<placeWorkers>
+			<li>PlaceWorker_ReportWorkSpeedPenalties</li>
+		</placeWorkers>
+  </ThingDef>
+
+
+  <ThingDef ParentName="NaniteBenchBase">
+    <defName>TableNaniteFactory</defName>
+    <label>Nanite Factory</label>
+	<thingClass>NaniteFactory.Building_NaniteFactory</thingClass>
+    <description>The Nanite Factory creates billions of molecular robots that are capable of all sorts of stuff.</description>
+    <graphicData>
+      <texPath>Items/anvil</texPath>
+      <graphicClass>Graphic_Multi</graphicClass>
+      <drawSize>(3.5,1.5)</drawSize>
+      <damageData>
+        <cornerTL>Damage/Corner</cornerTL>
+        <cornerTR>Damage/Corner</cornerTR>
+        <cornerBL>Damage/Corner</cornerBL>
+        <cornerBR>Damage/Corner</cornerBR>
+      </damageData>
+    </graphicData>
+    <costList>
+      <Steel>200</Steel>
+	  <Jade>100</Jade>
+	  <Uranium>100</Uranium>	  
+    </costList>
+    <stuffCategories>
+      <li>Metallic</li>
+	  <li>Stony</li>
+    </stuffCategories>
+    <costStuffCount>400</costStuffCount>
+    <altitudeLayer>Building</altitudeLayer>
+    <fillPercent>0.5</fillPercent>
+    <useHitPoints>True</useHitPoints>
+    <statBases>
+      <WorkToBuild>24000</WorkToBuild>
+      <MaxHitPoints>1000</MaxHitPoints>
+      <Flammability>0.0</Flammability>
+      <Cleanliness>-6</Cleanliness>
+	  <WorkTableWorkSpeedFactor>25</WorkTableWorkSpeedFactor>
+    </statBases>
+    <size>(3,1)</size>
+    <designationCategory>Production</designationCategory>
+    <passability>PassThroughOnly</passability>
+    <pathCost>100</pathCost>
+    <hasInteractionCell>True</hasInteractionCell>
+    <interactionCellOffset>(0,0,-1)</interactionCellOffset>
+    <surfaceType>Item</surfaceType>
+	<!-- <recipes>
+      <li>TM_MakeManaweave</li>
+    </recipes> -->
+    <inspectorTabs>
+      <li>ITab_Bills</li>
+    </inspectorTabs>
+    <building>
+      <spawnedConceptLearnOpportunity>BillsTab</spawnedConceptLearnOpportunity>
+    </building>
+    <comps>
+      <li Class="CompProperties_AffectedByFacilities">
+        <linkableFacilities>
+          <li>ToolCabinet</li>
+        </linkableFacilities>
+      </li>
+    </comps>
+    <designationHotKey>Misc2</designationHotKey>
+    <placeWorkers>
+      <li>PlaceWorker_ShowFacilitiesConnections</li>
+    </placeWorkers>
+	<researchPrerequisites>
+      <li>SPT_MolecularRobotics</li>
+    </researchPrerequisites>
+  </ThingDef>
+  
+  <!-- <AbilityUser.AbilityDef ParentName="BaseAbility">
+        <defName>Forge_Verb</defName>
+        <label>secondary targeter</label>
+        <uiIconPath>UI/replicate</uiIconPath>
+        <description>verb used forge replication</description>
+		<MainVerb Class="AbilityUser.VerbProperties_Ability">
+            <verbClass>AbilityUser.Verb_UseAbility</verbClass>
+				<tooltipShowProjectileDamage>false</tooltipShowProjectileDamage>
+				<tooltipShowExtraDamages>false</tooltipShowExtraDamages>
+				<tooltipShowHediffsToApply>false</tooltipShowHediffsToApply>
+				<tooltipShowMentalStatesToApply>false</tooltipShowMentalStatesToApply>
+            <hasStandardCommand>true</hasStandardCommand>
+            <defaultProjectile>Projectile_Warlock</defaultProjectile>
+            <abilityDef>Forge_Verb</abilityDef>
+			<isViolent>false</isViolent>
+            <warmupTime>0</warmupTime>
+            <SecondsToRecharge>0</SecondsToRecharge>
+            <range>40</range>
+			<ticksBetweenBurstShots>1</ticksBetweenBurstShots>
+            <burstShotCount>1</burstShotCount>
+            <soundCast>TM_VibrationLow</soundCast>
+			<soundCastTail>GunTail_Medium</soundCastTail>
+            <muzzleFlashScale>2</muzzleFlashScale>
+		    <AlwaysHits>true</AlwaysHits>
+            <isPrimary>true</isPrimary>
+			<targetParams>
+                <canTargetPawns>false</canTargetPawns>
+                <canTargetBuildings>true</canTargetBuildings>
+                <canTargetSelf>false</canTargetSelf>
+                <canTargetLocations>true</canTargetLocations>
+            </targetParams>
+        </MainVerb>
+    </AbilityUser.AbilityDef> -->
+
+</Defs>

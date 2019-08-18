@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+
+	<!--========================= Research into magic ===================================-->
+
+	<ResearchProjectDef>
+		<defName>SPT_MolecularRobotics</defName>
+		<label>Molecular Robotics</label>
+		<tab>SPT_MolecularRobotics</tab>
+		<description>Allows the construction of a Nanite Factory.</description>
+		<baseCost>2000</baseCost>
+		<techLevel>Neolithic</techLevel>
+		<researchViewX>0.0</researchViewX>
+		<researchViewY>0.0</researchViewY>
+	</ResearchProjectDef>
+	
+
+</Defs>

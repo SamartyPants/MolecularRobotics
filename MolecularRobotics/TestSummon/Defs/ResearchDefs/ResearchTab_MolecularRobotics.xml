@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+
+	<ResearchTabDef>
+		<defName>SPT_MolecularRobotics</defName>
+		<label>Molecular Robotics</label>
+	</ResearchTabDef>
+
+</Defs>
