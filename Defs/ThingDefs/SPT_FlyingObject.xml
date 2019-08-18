@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+
+	<ThingDef ParentName="BaseBullet" Name="SPT_FlyingObject">
+	   <defName>SPT_FlyingObject</defName>
+	   <thingClass>NaniteFactory.SPT_FlyingObject</thingClass>
+	   <label>flying object</label>
+	   <graphicData>
+			<texPath>Things/Mote/PowerBeam</texPath>
+			<graphicClass>Graphic_Single</graphicClass>
+			<shaderType>MoteGlow</shaderType>
+			<color>(.4,.65,1)</color>
+			<drawSize>(1, 1)</drawSize>
+		</graphicData>
+	   <projectile>
+			<flyOverhead>true</flyOverhead>
+			<damageDef>Stun</damageDef>
+			<damageAmountBase>0</damageAmountBase>
+			<speed>250</speed>
+	   </projectile>
+	</ThingDef>
+	
+</Defs>

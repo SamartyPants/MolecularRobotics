@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<LanguageData>
+
+<!-- Notification messages  -->
+
+
+<!-- GUI Labels -->
+<SPT_deconstructionNanitesEnabled>Deconstruct</SPT_deconstructionNanitesEnabled>
+<SPT_deconstructionNanitesEnabledDesc>Deconstruct buildings using nanite factory</SPT_deconstructionNanitesEnabledDesc>
+
+<SPT_constructionNanitesEnabled>Construct</SPT_constructionNanitesEnabled>
+<SPT_constructionNanitesEnabledDesc>Construct buildings using nanite factory</SPT_constructionNanitesEnabledDesc>
+
+<SPT_repairNanitesEnabled>Repair</SPT_repairNanitesEnabled>
+<SPT_repairNanitesEnabledDesc>Repair structures using nanite factory</SPT_repairNanitesEnabledDesc>
+
+<SPT_healNanitesEnabled>Heal</SPT_healNanitesEnabled>
+<SPT_healNanitesEnabledDesc>Heal pawns using nanite factory</SPT_healNanitesEnabledDesc>
+
+</LanguageData>
