@@ -31,6 +31,7 @@ namespace NaniteFactory
             GenSpawn.Spawn(moteThrown, loc.ToIntVec3(), map);
         }
 
+        //Method responsible for finding buildings that are repairable in home area
         public static List<Thing> FindRepairBuildings(Map map, Faction faction)
         {
             List<Thing> startingList = map.listerBuildingsRepairable.RepairableBuildings(faction);
@@ -45,6 +46,52 @@ namespace NaniteFactory
                 
             }
             return tmpThing;
+        }
+        //Method responsible for finding deconstruction designations within home area
+        public static List<Thing> FindDeconstructionBuildings(Map map, Faction faction)
+        {
+
+            List<Designation> startingList = map.designationManager.SpawnedDesignationsOfDef(DesignationDefOf.Deconstruct).ToList();   
+            List<Thing> tmpThing = new List<Thing>();
+            tmpThing.Clear();
+            for (int i = 0; i < startingList.Count; i++)
+            {   
+                if (map.areaManager.Home != null && map.areaManager.Home.ActiveCells != null && map.areaManager.Home.ActiveCells.ToList().Contains(startingList[i].target.Thing.Position) && startingList[i].target.Thing is Thing)
+                {
+                    tmpThing.Add(startingList[i].target.Thing as Thing);
+                }
+
+            }
+            return tmpThing;
+        }
+        //Method responsible for finding construction frames within home area
+        public static List<Frame> FindConstructionBuildings(Map map, Faction faction)
+        {
+
+            List<Building> startingList = map.listerBuildings.allBuildingsColonist;
+            List<Frame> tmpFrame = new List<Frame>();
+            tmpFrame.Clear();    
+            for (int i = 0; i < startingList.Count; i++)
+            {         
+                if (map.areaManager.Home != null && map.areaManager.Home.ActiveCells != null && map.areaManager.Home.ActiveCells.ToList().Contains(startingList[i].Position) && startingList[i] is Frame)
+                {
+                    tmpFrame.Add(startingList[i] as Frame);
+                }
+
+            }
+            return tmpFrame;
+        }
+        public static List<Pawn> FindHurtPawns(Map map, Faction faction)
+        {
+            List<Pawn> startingList = map.mapPawns.AllPawns.ToList();
+            List<Pawn> tmpPawn = new List<Pawn>();
+            tmpPawn.Clear();
+            for (int i = 0; i < startingList.Count; i++)
+            {
+                
+
+            }
+            return tmpPawn;
         }
 
     }

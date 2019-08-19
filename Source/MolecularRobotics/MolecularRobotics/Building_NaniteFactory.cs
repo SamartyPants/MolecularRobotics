@@ -8,16 +8,9 @@ using Verse;
 
 namespace NaniteFactory
 {
-    //test
+  
     [StaticConstructorOnStartup]
-    //public static class HelloWorld
-    //{
-    ////    static HelloWorld() //our constructor
-    ////    {
-    ////        Log.Message("Hello World!"); //Outputs "Hello World!" to the dev console.
-    ////    }
-    //}
-    //
+  
     public class Building_NaniteFactory : Building_WorkTable
     {
         private Thing targetThing = null;
@@ -29,8 +22,18 @@ namespace NaniteFactory
         //Intervals are offset to limit the amount of processor demand during active ticks
         private int repairInterval = 11;
         private int constructInterval = 125;
-        private int deconstructInterval = 29;
+        private int deconstructInterval = 25;
         private int healInterval = 13;
+
+        //Indicators which task the factory is currently working on
+        private bool isRepairing = false;
+        private bool isConstructing = false;
+        private bool isDeconstructing = false;
+        private bool isHealing = false;
+
+        //Current Job for Coloring
+        private Thing currentThingJob;
+        private Frame currentFrameJob;
 
         //How effective the nanite factory is at performing jobs
         //Used in utility and quality checks
@@ -39,7 +42,21 @@ namespace NaniteFactory
         private int deconstructSkill = 1;
         private int healSkill = 4;
 
+        //Labels for the buttons
+        String deconstruction_label = "SPT_deconstructionNanitesEnabled".Translate();
+        String deconstruction_desc = "SPT_deconstructionNanitesEnabledDesc".Translate();
+
+        String construction_label = "SPT_constructionNanitesEnabled".Translate();
+        String construction_desc = "SPT_constructionNanitesEnabledDesc".Translate();
+
+        String repair_label = "SPT_repairNanitesEnabled".Translate();
+        String repair_desc = "SPT_repairNanitesEnabledDesc".Translate();
+
+        String heal_label = "SPT_healNanitesEnabled".Translate();
+        String heal_desc = "SPT_HealNanitesEnabledDesc".Translate();
+
         //Saved Variables - built-in QC during call; use CAP variable whenever possible
+        //Repair requires -> ResearchProjectDef.Named("SPT_NaniteReconstitutionProtocols").IsFinished)
         private List<Thing> repairJobs = new List<Thing>();
         public List<Thing> RepairJobs
         {
@@ -76,19 +93,20 @@ namespace NaniteFactory
             }
         }
 
-        private List<Thing> constructJobs = new List<Thing>();
-        public List<Thing> ConstructJobs
+        //Construction requires -> ResearchProjectDef.Named("SPT_NaniteConstructionProtocols").IsFinished)
+        private List<Frame> constructJobs = new List<Frame>();
+        public List<Frame> ConstructJobs
         {
             get
             {
                 if (constructJobs == null)
                 {
-                    constructJobs = new List<Thing>();
+                    constructJobs = new List<Frame>();
                     constructJobs.Clear();
                 }
                 if (constructJobs.Count > 0)
                 {
-                    List<Thing> tmpJobs = new List<Thing>();
+                    List<Frame> tmpJobs = new List<Frame>();
                     tmpJobs.Clear();
                     for (int i = 0; i < constructJobs.Count; i++)
                     {
@@ -105,13 +123,14 @@ namespace NaniteFactory
             {
                 if (constructJobs == null)
                 {
-                    constructJobs = new List<Thing>();
+                    constructJobs = new List<Frame>();
                     constructJobs.Clear();
                 }
                 constructJobs = value;
             }
         }
 
+        //Healing requires -> ResearchProjectDef.Named("SPT_NaniteMendingProtocols").IsFinished)
         private List<Pawn> healJobs = new List<Pawn>();
         public List<Pawn> HealJobs
         {
@@ -156,6 +175,7 @@ namespace NaniteFactory
             }
         }
 
+        //Deconstruction should be the first ability by default. This should not require any additional research
         private List<Thing> deconstructJobs = new List<Thing>();
         public List<Thing> DeconstructJobs
         {
@@ -212,7 +232,7 @@ namespace NaniteFactory
             }
         }
 
-        //Not sure what this does
+      
         public override void SpawnSetup(Map map, bool respawningAfterLoad)
         {
             base.SpawnSetup(map, respawningAfterLoad);
@@ -222,8 +242,55 @@ namespace NaniteFactory
         {        
             base.Tick();
 
+            //The following draws the mote every game tick.
+            //This was so the user can better see what is being worked on for the jobs that take longer (constructing and deconstructing)
+            //we may want to lower the amount a bit so that its not fireing every tick, but ever 4 or 10.
+            if(isRepairing == true)
+            {
+                //set color of nanites
+                //Draw Visual On thing (Blue sparkles temporary)
+                if(currentThingJob != null)
+                {
+                    Vector3 rndVec = currentThingJob.DrawPos;
+                    rndVec.x += (Rand.Range(-.3f, .3f));
+                    rndVec.z += (Rand.Range(-.3f, .3f));
+                    SPT_Utility.ThrowGenericMote(SPT_DefOf.SPT_Mote_NaniteRepairing, rndVec, currentThingJob.Map, Rand.Range(.02f, .2f), .1f, .3f, .3f, Rand.Range(-300, 300), 0, 0, Rand.Range(0, 360));
+
+                }
+
+            }
+            else if(isConstructing == true)
+            {
+                //Draw Visual On thing (Blue sparkles temporary)
+                if(currentFrameJob != null)
+                {
+                    Vector3 rndVec = currentFrameJob.DrawPos;
+                    rndVec.x += (Rand.Range(-.3f, .3f));
+                    rndVec.z += (Rand.Range(-.3f, .3f));
+                    SPT_Utility.ThrowGenericMote(SPT_DefOf.SPT_Mote_NaniteConstructing, rndVec, currentFrameJob.Map, Rand.Range(.02f, .2f), .1f, .3f, .3f, Rand.Range(-300, 300), 0, 0, Rand.Range(0, 360));
+
+                }
+
+            }
+            else if (isDeconstructing == true)
+            {
+                //Draw Visual On thing (Red sparkles temporary)
+                if(currentThingJob != null)
+                {
+                    Vector3 rndVec = currentThingJob.DrawPos;
+                    rndVec.x += (Rand.Range(-.3f, .3f));
+                    rndVec.z += (Rand.Range(-.3f, .3f));
+                    SPT_Utility.ThrowGenericMote(SPT_DefOf.SPT_Mote_NaniteWorking, rndVec, currentThingJob.Map, Rand.Range(.02f, .2f), .1f, .3f, .3f, Rand.Range(-300, 300), 0, 0, Rand.Range(0, 360));
+
+                }
+
+            }
+            else if (isHealing == true)
+            {
+              
+            }
             //Offset execution of each function based on game tick
-            if(Find.TickManager.TicksGame % this.repairInterval == 0)
+            if (Find.TickManager.TicksGame % this.repairInterval == 0)
             {
                 DoRepairJobs();
             }
@@ -244,22 +311,39 @@ namespace NaniteFactory
         //Execute ongoing jobs each interval
         public void DoRepairJobs()
         {
+            //If there are more than 0 repair jobs on the map
             if(RepairJobs.Count > 0)
-            {
+            {   
+                //Store those jobs in a temporary thing list to iterate through
                 List<Thing> tmpJobs = RepairJobs;
                 for(int i =0; i < tmpJobs.Count; i++)
                 {
+                    //Cast current iteration to a thing
                     Thing jobThing = tmpJobs[i];
-                    if(jobThing != null)
+                    Log.Message(jobThing.ToString());
+                    //if that thing is not null (error checking)
+                    if (jobThing != null)
                     {
+                        //****************************
+                        //repairSkill == 1
+                        //0 == min value to compare
+                        //MaxHitPoints == max value to compare
+                        //
+                        //adds 1 hp to the "thing" until the HP reaches max.
+                        //****************************
                         jobThing.HitPoints = Mathf.Clamp(jobThing.HitPoints += this.repairSkill, 0, jobThing.MaxHitPoints);
+
+                        //Draw Visual On thing (Red sparkles temporary)
                         Vector3 rndVec = jobThing.DrawPos;
                         rndVec.x += (Rand.Range(-.3f, .3f));
                         rndVec.z += (Rand.Range(-.3f, .3f));
-                        SPT_Utility.ThrowGenericMote(SPT_DefOf.SPT_Mote_NaniteWorking, rndVec, jobThing.Map, Rand.Range(.02f, .2f), .1f, .3f, .3f, Rand.Range(-300,300), 0, 0, Rand.Range(0, 360));
+                        SPT_Utility.ThrowGenericMote(SPT_DefOf.SPT_Mote_NaniteRepairing, rndVec, jobThing.Map, Rand.Range(.02f, .2f), .1f, .3f, .3f, Rand.Range(-300,300), 0, 0, Rand.Range(0, 360));
+
+                        //Once thing is max health, remove thing from job list
                         if(jobThing.HitPoints == jobThing.MaxHitPoints)
                         {
                             RepairJobs.Remove(tmpJobs[i]);
+                            isRepairing = false;
                         }
                     }
                 }
@@ -268,44 +352,97 @@ namespace NaniteFactory
 
         public void DoConstructJobs()
         {
+            //If there are more than 0 construction jobs on the map
+            if (ConstructJobs.Count > 0)
+            {
+                //Store those jobs in a temporary thing list to iterate through
+                List<Frame> tmpJobs = ConstructJobs;
+                for (int i = 0; i < tmpJobs.Count; i++)
+                {
+                    //Cast current iteration to a thing
+                    Frame jobThing = tmpJobs[i];
+                
+                    //if that thing is not null (error checking)
+                    if (jobThing != null)
+                    {
+                        //Need to check for materials needed            
+                        if(jobThing.MaterialsNeeded().Count == 0)
+                        {
+                            jobThing.workDone = Mathf.Clamp(jobThing.workDone += this.constructSkill, 0, jobThing.WorkToBuild);
+
+                            //Draw Visual On thing (Blue sparkles temporary)
+                            Vector3 rndVec = jobThing.DrawPos;
+                            rndVec.x += (Rand.Range(-.3f, .3f));
+                            rndVec.z += (Rand.Range(-.3f, .3f));
+                            SPT_Utility.ThrowGenericMote(SPT_DefOf.SPT_Mote_NaniteConstructing, rndVec, jobThing.Map, Rand.Range(.02f, .2f), .1f, .3f, .3f, Rand.Range(-300, 300), 0, 0, Rand.Range(0, 360));
+
+                            //Once thing is max work, remove thing from job list
+                            if (jobThing.WorkLeft == 0.0)
+                            {
+                                jobThing.CompleteConstruction(this.Map.mapPawns.AllPawnsSpawned.RandomElement() as Pawn);
+                                ConstructJobs.Remove(tmpJobs[i]);
+                                isConstructing = false;
+                            }
+                        }
+                    }
+                }
+            }
 
         }
 
         public void DoDeconstructJobs()
         {
+            //If there are more than 0 construction jobs on the map
+            if (DeconstructJobs.Count > 0)
+            {
+                //Store those jobs in a temporary thing list to iterate through
+                List<Thing> tmpJobs = DeconstructJobs;
+                for (int i = 0; i < tmpJobs.Count; i++)
+                {
+                    //Cast current iteration to a thing
+                    Thing jobThing = tmpJobs[i];
 
+                    //if that thing is not null (error checking)
+                    if (jobThing != null)
+                    {
+                            //There is nothing fancy here yet, we need to revisit how we handle this later.                     
+                            jobThing.Destroy(DestroyMode.Deconstruct);
+                            //Draw Visual On thing (Red sparkles temporary)
+                            Vector3 rndVec = jobThing.DrawPos;
+                            rndVec.x += (Rand.Range(-.3f, .3f));
+                            rndVec.z += (Rand.Range(-.3f, .3f));
+                            SPT_Utility.ThrowGenericMote(SPT_DefOf.SPT_Mote_NaniteWorking, rndVec, jobThing.Map, Rand.Range(.02f, .2f), .1f, .3f, .3f, Rand.Range(-300, 300), 0, 0, Rand.Range(0, 360));
+
+                            DeconstructJobs.Remove(tmpJobs[i]);
+                            isDeconstructing = false;       
+                    }
+                }
+            }
         }
 
         public void DoHealJobs()
         {
-
+            isHealing = false;
         }
 
-        //I assume gizmo is an "interactive furniture"
+        
         public override IEnumerable<Gizmo> GetGizmos()
         {
             var gizmoList = base.GetGizmos().ToList();
+
             //Check to make sure research is complete
-            //Should require research before construction of the nanite factory?
-            //Further research can provide additional functionality?
+            //Should require research before construction of the nanite factory? -> Yes, Research required to unlock nanite factory.
+            //Further research can provide additional functionality? -> Yes, futher research unlocks repair/construct/heal
+
+
             if (true)//ResearchProjectDef.Named("SPT_MolecularRobotics").IsFinished)
             {
                 bool canScan = true;
                 //Bill stack being... bills created at this table?
 
-                String deconstruction_label = "SPT_deconstructionNanitesEnabled".Translate();
-                String deconstruction_desc = "SPT_deconstructionNanitesEnabledDesc".Translate();
-
-                String construction_label = "SPT_constructionNanitesEnabled".Translate();
-                String construction_desc = "SPT_constructionNanitesEnabledDesc".Translate();
-
-                String repair_label = "SPT_repairNanitesEnabled".Translate();
-                String repair_desc = "SPT_repairNanitesEnabledDesc".Translate();
-
-                String heal_label = "SPT_healNanitesEnabled".Translate();
-                String heal_desc = "SPT_HealNanitesEnabledDesc".Translate();
-
-                Command_Action item2 = new Command_Action
+               
+                //Deconstruction should be the first ability by default. This should not require any additional research
+                Command_Action item1 = new Command_Action
                 {
                     defaultLabel = deconstruction_label,
                     defaultDesc = deconstruction_desc,
@@ -314,12 +451,14 @@ namespace NaniteFactory
                     action = delegate
                     {
                         Log.Message("ACTION 1");
+                        isDeconstructing = true;
                         sendNanitesDeconstruct();
+                      
                     }
                 };
-                gizmoList.Add(item2);
+                gizmoList.Add(item1);
 
-                Command_Action item3 = new Command_Action
+                Command_Action item2 = new Command_Action
                 {
                     defaultLabel = construction_label,
                     defaultDesc = construction_desc,
@@ -328,13 +467,15 @@ namespace NaniteFactory
                     action = delegate
                     {
                         Log.Message("ACTION 2");
+                        isConstructing = true;
                         sendNanitesConstruct();
+                      
                     }
                 };
-                gizmoList.Add(item3);
+                gizmoList.Add(item2);
 
 
-                Command_Action item4 = new Command_Action
+                Command_Action item3 = new Command_Action
                 {
                     defaultLabel = repair_label,
                     defaultDesc = repair_desc,
@@ -343,12 +484,14 @@ namespace NaniteFactory
                     action = delegate
                     {
                         Log.Message("ACTION 3");
+                        isRepairing = true;
                         sendNanitesRepair();
+                      
                     }
                 };
-                gizmoList.Add(item4);
+                gizmoList.Add(item3);
 
-                Command_Action item5 = new Command_Action
+                Command_Action item4 = new Command_Action
                 {
                     defaultLabel = heal_label,
                     defaultDesc = heal_desc,
@@ -357,10 +500,12 @@ namespace NaniteFactory
                     action = delegate
                     {
                         Log.Message("ACTION 4");
+                        isHealing = true;
                         sendNanitesHeal();
+                       
                     }
                 };
-                gizmoList.Add(item5);
+                gizmoList.Add(item4);
 
             }
             return gizmoList;
@@ -378,11 +523,48 @@ namespace NaniteFactory
          */
         private void sendNanitesDeconstruct()
         {
+            List<Thing> deconstructableThings = SPT_Utility.FindDeconstructionBuildings(this.Map, this.Faction);
+            if (deconstructableThings != null)
+            {
+                if (deconstructableThings.Count > 0)
+                {
 
+                    Thing targetThing = deconstructableThings.Except(DeconstructJobs).RandomElement();
+                    if (targetThing != null)
+                    {
+                        currentThingJob = targetThing;
+                        DeconstructJobs.Add(targetThing);
+                    }
+                    else
+                    {
+                        Log.Message("Nothing new found to deconstruct");
+                    }
+
+                }
+            }
         }
         private void sendNanitesConstruct()
         {
-
+            List<Frame> constructableBuildings = SPT_Utility.FindConstructionBuildings(this.Map, this.Faction);
+            if (constructableBuildings != null)
+            {
+                if (constructableBuildings.Count > 0)
+                {
+                
+                        Frame targetThing = constructableBuildings.Except(ConstructJobs).RandomElement();
+                        if (targetThing != null)
+                        {
+                            currentFrameJob = targetThing;
+                            ConstructJobs.Add(targetThing);
+                        }
+                        else
+                        {
+                            Log.Message("Nothing new found to construct");
+                        }
+                                   
+                }
+            }
+                  
         }
         private void sendNanitesRepair()
         {
@@ -414,8 +596,6 @@ namespace NaniteFactory
 
         //Names and research values/trees subject to change
         // Research dependancies depicted with . (DOT) notation : Research 1.1 is a child of Research 1. Research 1.1.1 is a child of research 1.1 ... etc
-
-
         //Research Tab -> Molecular Robotics
 
         // Research 1 : Nanobot creation  // Unlocks the Nanite Factory // 2000 points to start   
