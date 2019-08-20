@@ -501,8 +501,7 @@ namespace NaniteFactory
                     {
                         Log.Message("ACTION 4");
                         isHealing = true;
-                        sendNanitesHeal();
-                       
+                        sendNanitesHeal();                       
                     }
                 };
                 gizmoList.Add(item4);
@@ -568,6 +567,10 @@ namespace NaniteFactory
         }
         private void sendNanitesRepair()
         {
+            //TEST FUNCTIONALITY//
+            
+
+            //
             List<Thing> repairableBuildings = SPT_Utility.FindRepairBuildings(this.Map, this.Faction);
             if(repairableBuildings != null)
             {
@@ -591,7 +594,7 @@ namespace NaniteFactory
         }
         private void sendNanitesHeal()
         {
-
+            
         }
 
         //Names and research values/trees subject to change

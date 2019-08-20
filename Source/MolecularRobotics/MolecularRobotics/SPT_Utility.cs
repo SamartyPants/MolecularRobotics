@@ -88,10 +88,46 @@ namespace NaniteFactory
             tmpPawn.Clear();
             for (int i = 0; i < startingList.Count; i++)
             {
-                
+                if(IsPawnInjured(startingList[i], 0))
+                {
+                    tmpPawn.Add(startingList[i]);
+                }
 
             }
             return tmpPawn;
+        }
+
+        public static bool IsPawnInjured(Pawn targetPawn, float minInjurySeverity = 0)
+        {
+            float injurySeverity = 0;
+            using (IEnumerator<BodyPartRecord> enumerator = targetPawn.health.hediffSet.GetInjuredParts().GetEnumerator())
+            {
+                while (enumerator.MoveNext())
+                {
+                    BodyPartRecord rec = enumerator.Current;
+                    IEnumerable<Hediff_Injury> arg_BB_0 = targetPawn.health.hediffSet.GetHediffs<Hediff_Injury>();
+                    Func<Hediff_Injury, bool> arg_BB_1;
+                    arg_BB_1 = ((Hediff_Injury injury) => injury.Part == rec);
+
+                    foreach (Hediff_Injury current in arg_BB_0.Where(arg_BB_1))
+                    {
+                        bool flag5 = current.CanHealNaturally() && !current.IsPermanent();
+                        if (flag5)
+                        {
+                            injurySeverity += current.Severity;
+                        }
+                    }
+                }
+            }
+            return injurySeverity > minInjurySeverity;
+        }
+
+        public static IntVec3[] ElectricDeliveryPath(Thing from, Thing to)
+        {
+            IntVec3[] tmpPath = new IntVec3[300]; //Should never need more than 300 cells on a 300x300 map
+
+
+            return tmpPath;
         }
 
     }
