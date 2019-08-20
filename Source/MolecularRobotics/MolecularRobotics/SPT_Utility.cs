@@ -120,6 +120,9 @@ namespace NaniteFactory
                     }
                 }
             }
+            Log.Message(injurySeverity.ToString());
+         
+
             return injurySeverity > minInjurySeverity;
         }
 

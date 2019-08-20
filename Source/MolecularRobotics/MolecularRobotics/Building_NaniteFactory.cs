@@ -15,6 +15,7 @@ namespace NaniteFactory
     {
         private Thing targetThing = null;
         private LocalTargetInfo infoTarget = null;
+        private Effecter effecter;
 
         //Unsaved variables
         //How frequently the Nanite Factory checks for related jobs
@@ -35,13 +36,14 @@ namespace NaniteFactory
         private Thing currentThingJob;
         private Frame currentFrameJob;
         private Pawn currentPawnJob;
+        private Hediff_Injury lastBodyPartHealed;
 
         //How effective the nanite factory is at performing jobs
         //Used in utility and quality checks
         private int repairSkill = 1;
         private int constructSkill = 5;
         private int deconstructSkill = 1;
-        private int healSkill = 4;
+        private float healSkill = .1F;
 
         //Labels for the buttons
         String deconstruction_label = "SPT_deconstructionNanitesEnabled".Translate();
@@ -442,8 +444,9 @@ namespace NaniteFactory
                  
                     //if that thing is not null (error checking)
                     if (jobPawn != null)
-                    {
-                     
+                    {               
+                       
+                        //Looping through this again ( i know we defined a function for this in Utility, however I want the nanites to be able to focus 1 body part at a time
                         using (IEnumerator<BodyPartRecord> enumerator = jobPawn.health.hediffSet.GetInjuredParts().GetEnumerator())
                         {
                             while (enumerator.MoveNext())
@@ -452,16 +455,47 @@ namespace NaniteFactory
                                 IEnumerable<Hediff_Injury> arg_BB_0 = jobPawn.health.hediffSet.GetHediffs<Hediff_Injury>();
                                 Func<Hediff_Injury, bool> arg_BB_1;
                                 arg_BB_1 = ((Hediff_Injury injury) => injury.Part == rec);
-
+                              
                                 foreach (Hediff_Injury current in arg_BB_0.Where(arg_BB_1))
                                 {
-                                    bool flag5 = current.CanHealNaturally() && !current.IsPermanent() && current.BleedRate > 0;
-                                    if (flag5)
-                                    {
-                                      
-                                        current.Heal(this.healSkill);
-                                        currentPawnJob = jobPawn;
+                                    //Check if we have started healing a pawn yet, null == starting on a new pawn
+                                    if (lastBodyPartHealed == null)
+                                    {                                     
+                                        bool flag5 = current.CanHealNaturally() && !current.IsPermanent() && current.BleedRate > 0;
+                                        if (flag5)
+                                        {                                                                               
+                                            //set current body part being worked on
+                                            lastBodyPartHealed = current;
+                                            current.Heal(this.healSkill);
+                                           
+                                            //current.Tended(.5F, 1);
+                                            if (current.Bleeding == false)
+                                            {
+                                                //body part is healed, reset lastBodyPartHealed                                           
+                                                lastBodyPartHealed = null;
+                                               
+                                            }
+                                        }
                                     }
+                                    else
+                                    {
+                                        //If we have healed a body part previously
+                                        if (lastBodyPartHealed == current)
+                                        {                                       
+                                           // Get the same body part we healed last interval
+                                            bool flag5 = current.CanHealNaturally() && !current.IsPermanent() && current.BleedRate > 0;
+                                            if (flag5)
+                                            {                                      
+                                                lastBodyPartHealed = current;
+                                                current.Heal(this.healSkill);                                                                                     
+                                                if (current.Bleeding == false)
+                                                {       
+                                                    //body part is healed, reset lastBodyPartHealed
+                                                    lastBodyPartHealed = null;                                    
+                                                }
+                                            }
+                                        }
+                                    }                                             
                                 }
                             }
                         }
@@ -472,14 +506,51 @@ namespace NaniteFactory
                         rndVec.z += (Rand.Range(-.3f, .3f));
                         SPT_Utility.ThrowGenericMote(SPT_DefOf.SPT_Mote_NaniteHealing, rndVec, jobPawn.Map, Rand.Range(.02f, .2f), .1f, .3f, .3f, Rand.Range(-300, 300), 0, 0, Rand.Range(0, 360));
 
-                        HealJobs.Remove(jobPawn);
-                        isHealing = false;
+                     
+                        if (!SPT_Utility.IsPawnInjured(jobPawn, 0))
+                        {
+                           
+                            HealJobs.Remove(jobPawn);
+                            isHealing = false;
+                        }
+
                     }
                 }
             }
         }
 
-        
+        public void ShowProgressBar()
+        {
+            
+            //bool flag4 = this.effecter == null;
+            //if (flag4)
+            //{
+            //    EffecterDef progressBar = EffecterDefOf.ProgressBar;
+            //    this.effecter = progressBar.Spawn();
+            //}
+            //else
+            //{
+            //    LocalTargetInfo localTargetInfo = this.parent;
+            //    bool spawned2 = base.parent.Spawned;
+            //    if (spawned2)
+            //    {
+            //        this.effecter.EffectTick(this.parent, TargetInfo.Invalid);
+            //    }
+            //    MoteProgressBar mote = ((SubEffecter_ProgressBar)this.effecter.children[0]).mote;
+            //    bool flag5 = mote != null;
+            //    if (flag5)
+            //    {
+            //        float value = 1f - (float)(this.TicksToDestroy - this.ticksLeft) / (float)this.TicksToDestroy;
+            //        mote.progress = Mathf.Clamp01(value);
+            //        mote.offsetZ = -0.5f;
+            //    }
+            //}
+            //bool flag = this.effecter != null && this.effecter.children != null;
+            //if (flag)
+            //{
+            //    this.effecter.Cleanup();
+            //}
+        }
         public override IEnumerable<Gizmo> GetGizmos()
         {
             var gizmoList = base.GetGizmos().ToList();
@@ -652,7 +723,8 @@ namespace NaniteFactory
                 {
                     Pawn targetPawn = healablePawns.Except(HealJobs).RandomElement();
                     if (targetPawn != null)
-                    {                     
+                    {
+                        currentPawnJob = targetPawn;
                         HealJobs.Add(targetPawn);    
                     }
                     else
