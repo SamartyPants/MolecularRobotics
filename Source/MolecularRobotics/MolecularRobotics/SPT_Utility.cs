@@ -83,15 +83,44 @@ namespace NaniteFactory
         }
         public static List<Pawn> FindHurtPawns(Map map, Faction faction)
         {
-            List<Pawn> startingList = map.mapPawns.AllPawns.ToList();
+            List<Pawn> startingList = map.mapPawns.PawnsInFaction(Faction.OfPlayer).ToList();
             List<Pawn> tmpPawn = new List<Pawn>();
             tmpPawn.Clear();
             for (int i = 0; i < startingList.Count; i++)
             {
-                
+
+                if (IsPawnInjured(startingList[i], 0))
+                {
+                    tmpPawn.Add(startingList[i]);
+                }
 
             }
             return tmpPawn;
+        }
+
+        public static bool IsPawnInjured(Pawn targetPawn, float minInjurySeverity = 0)
+        {
+            float injurySeverity = 0;
+            using (IEnumerator<BodyPartRecord> enumerator = targetPawn.health.hediffSet.GetInjuredParts().GetEnumerator())
+            {
+                while (enumerator.MoveNext())
+                {
+                    BodyPartRecord rec = enumerator.Current;
+                    IEnumerable<Hediff_Injury> arg_BB_0 = targetPawn.health.hediffSet.GetHediffs<Hediff_Injury>();
+                    Func<Hediff_Injury, bool> arg_BB_1;
+                    arg_BB_1 = ((Hediff_Injury injury) => injury.Part == rec);
+
+                    foreach (Hediff_Injury current in arg_BB_0.Where(arg_BB_1))
+                    {
+                        bool flag5 = current.CanHealNaturally() && !current.IsPermanent() && current.BleedRate > 0;
+                        if (flag5)
+                        {
+                            injurySeverity += current.Severity;
+                        }
+                    }
+                }
+            }
+            return injurySeverity > minInjurySeverity;
         }
 
     }

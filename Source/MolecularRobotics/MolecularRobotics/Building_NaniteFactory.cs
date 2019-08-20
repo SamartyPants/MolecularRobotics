@@ -23,7 +23,7 @@ namespace NaniteFactory
         private int repairInterval = 11;
         private int constructInterval = 125;
         private int deconstructInterval = 25;
-        private int healInterval = 13;
+        private int healInterval = 25;
 
         //Indicators which task the factory is currently working on
         private bool isRepairing = false;
@@ -34,6 +34,7 @@ namespace NaniteFactory
         //Current Job for Coloring
         private Thing currentThingJob;
         private Frame currentFrameJob;
+        private Pawn currentPawnJob;
 
         //How effective the nanite factory is at performing jobs
         //Used in utility and quality checks
@@ -150,7 +151,7 @@ namespace NaniteFactory
                         if (healJobs[i] != null && !healJobs[i].DestroyedOrNull() && healJobs[i].Spawned)
                         {
                             Pawn p = healJobs[i];
-                            if (p.health.summaryHealth.SummaryHealthPercent < 1f && p.InBed()) //Tends injuries for pawns in a bed
+                            if (p.health.summaryHealth.SummaryHealthPercent < 1f) //Tends injuries for pawns in a bed
                             {
                                 tmpJobs.Add(p);
                             }
@@ -287,7 +288,14 @@ namespace NaniteFactory
             }
             else if (isHealing == true)
             {
-              
+                if (currentPawnJob != null)
+                {
+                    Vector3 rndVec = currentPawnJob.DrawPos;
+                    rndVec.x += (Rand.Range(-.3f, .3f));
+                    rndVec.z += (Rand.Range(-.3f, .3f));
+                    SPT_Utility.ThrowGenericMote(SPT_DefOf.SPT_Mote_NaniteHealing, rndVec, currentPawnJob.Map, Rand.Range(.02f, .2f), .1f, .3f, .3f, Rand.Range(-300, 300), 0, 0, Rand.Range(0, 360));
+
+                }
             }
             //Offset execution of each function based on game tick
             if (Find.TickManager.TicksGame % this.repairInterval == 0)
@@ -320,7 +328,7 @@ namespace NaniteFactory
                 {
                     //Cast current iteration to a thing
                     Thing jobThing = tmpJobs[i];
-                    Log.Message(jobThing.ToString());
+               
                     //if that thing is not null (error checking)
                     if (jobThing != null)
                     {
@@ -421,8 +429,54 @@ namespace NaniteFactory
         }
 
         public void DoHealJobs()
-        {
-            isHealing = false;
+        {         
+            //If there are more than 0 construction jobs on the map
+            if (HealJobs.Count > 0)
+            {             
+                //Store those jobs in a temporary thing list to iterate through
+                List<Pawn> tmpPawns = HealJobs;
+                for (int i = 0; i < tmpPawns.Count; i++)
+                {
+                    //Cast current iteration to a thing
+                    Pawn jobPawn = tmpPawns[i];
+                 
+                    //if that thing is not null (error checking)
+                    if (jobPawn != null)
+                    {
+                     
+                        using (IEnumerator<BodyPartRecord> enumerator = jobPawn.health.hediffSet.GetInjuredParts().GetEnumerator())
+                        {
+                            while (enumerator.MoveNext())
+                            {
+                                BodyPartRecord rec = enumerator.Current;
+                                IEnumerable<Hediff_Injury> arg_BB_0 = jobPawn.health.hediffSet.GetHediffs<Hediff_Injury>();
+                                Func<Hediff_Injury, bool> arg_BB_1;
+                                arg_BB_1 = ((Hediff_Injury injury) => injury.Part == rec);
+
+                                foreach (Hediff_Injury current in arg_BB_0.Where(arg_BB_1))
+                                {
+                                    bool flag5 = current.CanHealNaturally() && !current.IsPermanent() && current.BleedRate > 0;
+                                    if (flag5)
+                                    {
+                                      
+                                        current.Heal(this.healSkill);
+                                        currentPawnJob = jobPawn;
+                                    }
+                                }
+                            }
+                        }
+                   
+                        //Draw Visual On thing (Red sparkles temporary)
+                        Vector3 rndVec = jobPawn.DrawPos;
+                        rndVec.x += (Rand.Range(-.3f, .3f));
+                        rndVec.z += (Rand.Range(-.3f, .3f));
+                        SPT_Utility.ThrowGenericMote(SPT_DefOf.SPT_Mote_NaniteHealing, rndVec, jobPawn.Map, Rand.Range(.02f, .2f), .1f, .3f, .3f, Rand.Range(-300, 300), 0, 0, Rand.Range(0, 360));
+
+                        HealJobs.Remove(jobPawn);
+                        isHealing = false;
+                    }
+                }
+            }
         }
 
         
@@ -591,7 +645,26 @@ namespace NaniteFactory
         }
         private void sendNanitesHeal()
         {
-
+            List<Pawn> healablePawns = SPT_Utility.FindHurtPawns(this.Map, this.Faction);
+            if (healablePawns != null)
+            {
+                if (healablePawns.Count > 0)
+                {
+                    Pawn targetPawn = healablePawns.Except(HealJobs).RandomElement();
+                    if (targetPawn != null)
+                    {                     
+                        HealJobs.Add(targetPawn);    
+                    }
+                    else
+                    {
+                        Log.Message("Nothing new found to repair");
+                    }
+                }
+                else
+                {
+                    Log.Message("Nothing found to repair");
+                }
+            }
         }
 
         //Names and research values/trees subject to change
