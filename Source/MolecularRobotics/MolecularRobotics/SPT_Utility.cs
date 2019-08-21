@@ -137,13 +137,16 @@ namespace NaniteFactory
 
             Map map = from.Map;
             List<IntVec3> allCells = new List<IntVec3>();
-            allCells.Clear();
             List<IntVec3> startList = new List<IntVec3>();
-            startList.Add(from.Position);
             List<IntVec3> bestPath = new List<IntVec3>();
             List<EPath> pathFinder = new List<EPath>();
+
+            allCells.Clear();
             pathFinder.Clear();
+
+            startList.Add(from.Position);                 
             pathFinder.Add(new EPath(0, 0, false, from.Position, startList));
+
             bool pathFound = false;
             int bestPathIndex = 0;
 

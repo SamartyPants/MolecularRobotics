@@ -11,7 +11,7 @@
 		<baseCost>2000</baseCost>
 		<techLevel>Neolithic</techLevel>
 		<researchViewX>0.0</researchViewX>
-		<researchViewY>0.0</researchViewY>
+		<researchViewY>2.5</researchViewY>
 	</ResearchProjectDef>
 	<ResearchProjectDef>
 		<defName>SPT_NaniteReconstitutionProtocols</defName>
@@ -20,8 +20,11 @@
 		<description>Allows the Nanite Factory to create nanites to repair damaged structures.</description>
 		<baseCost>2000</baseCost>
 		<techLevel>Neolithic</techLevel>
-		<researchViewX>0.0</researchViewX>
-		<researchViewY>0.0</researchViewY>
+		<researchViewX>1.0</researchViewX>
+		<researchViewY>1.0</researchViewY>
+		<prerequisites>
+			<li>SPT_MolecularRobotics</li>
+		</prerequisites>
 	</ResearchProjectDef>
 	<ResearchProjectDef>
 		<defName>SPT_NaniteConstructionProtocols</defName>
@@ -30,8 +33,11 @@
 		<description>Allows the Nanite Factory to create nanites to construct structures.</description>
 		<baseCost>2000</baseCost>
 		<techLevel>Neolithic</techLevel>
-		<researchViewX>0.0</researchViewX>
-		<researchViewY>0.0</researchViewY>
+		<researchViewX>1.0</researchViewX>
+		<researchViewY>2.0</researchViewY>
+		<prerequisites>
+			<li>SPT_MolecularRobotics</li>
+		</prerequisites>
 	</ResearchProjectDef>
 	<ResearchProjectDef>
 		<defName>SPT_NaniteMendingProtocols</defName>
@@ -40,8 +46,26 @@
 		<description>Allows the Nanite Factory to create nanites to heal colonists.</description>
 		<baseCost>2000</baseCost>
 		<techLevel>Neolithic</techLevel>
-		<researchViewX>0.0</researchViewX>
-		<researchViewY>0.0</researchViewY>
+		<researchViewX>1.0</researchViewX>
+		<researchViewY>3.0</researchViewY>
+		<prerequisites>
+			<li>SPT_MolecularRobotics</li>
+		</prerequisites>
+	</ResearchProjectDef>
+	<ResearchProjectDef>
+		<defName>SPT_NaniteWirelessAdaptation</defName>
+		<label>Nanite Wireless Adaptation</label>
+		<tab>SPT_MolecularRobotics</tab>
+		<description>The nanites have upgraded themselves to allow for airborn wireless travel.</description>
+		<baseCost>4000</baseCost>
+		<techLevel>Neolithic</techLevel>
+		<researchViewX>2.0</researchViewX>
+		<researchViewY>2.5</researchViewY>
+		<prerequisites>			
+			<li>SPT_NaniteReconstitutionProtocols</li>
+			<li>SPT_NaniteConstructionProtocols</li>
+			<li>SPT_NaniteMendingProtocols</li>
+		</prerequisites>
 	</ResearchProjectDef>
 	
 

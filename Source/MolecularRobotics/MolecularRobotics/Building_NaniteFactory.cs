@@ -718,24 +718,26 @@ namespace NaniteFactory
             if(repairableBuildings != null)
             {
                 if(repairableBuildings.Count > 0)
-                {
+                {                  
                     Thing targetThing = repairableBuildings.Except(RepairJobs).RandomElement();
                     if (targetThing != null)
                     {
                         //Need to check if the "Wireless" research is researched
                         List<IntVec3> ePath = SPT_Utility.FindElectricPath(this, targetThing);
+                     
                         if (ePath.Count > 0)
                         {
                             for (int i = 0; i < ePath.Count; i++)
-                            {
+                            {                    
                                 MoteMaker.ThrowHeatGlow(ePath[i], this.Map, 1f);
                             }
+                            RepairJobs.Add(targetThing);
                         }
                         else
                         {
                             Log.Message("no path found");
                         }
-                        RepairJobs.Add(targetThing);
+                       
                     }
                     else
                     {
