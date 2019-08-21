@@ -10,16 +10,32 @@ namespace NaniteFactory
 {
   
     [StaticConstructorOnStartup]
-  
+
+    //***************************************************************************************
+    //  NOTES:
+    // Names and research values/trees subject to change
+    // Research dependancies depicted with . (DOT) notation : Research 1.1 is a child of Research 1. Research 1.1.1 is a child of research 1.1 ... etc
+    // Research Tab -> Molecular Robotics
+
+    // Research 1 : Nanobot creation  // Unlocks the Nanite Factory // 2000 points to start   
+    // Research 1.1 : Nanobot Reconsititution Protocols // Unlocks the nanites ability to repair damaged, claimed structures // 2000
+    // Research 1.2 : Nanobot Construction Protocols // Unlocks the nanites ability to construct things // 2000
+    // Research 1.3 : Nanobot Mending Protocols // Unlocks the nanites ability to heal colonists // 3000
+    // Research 1.2.1 : Nanobot Delivery Protocols // Unlocks the nanites ability to deliver resources to a job site // 3000
+
+
+    //Also considering research to improve speed/carry/distance etc...
+    //**************************************************************************************
+
     public class Building_NaniteFactory : Building_WorkTable
     {
         private Thing targetThing = null;
         private LocalTargetInfo infoTarget = null;
         private Effecter effecter;
 
-        //Unsaved variables
         //Used to determine available resources within a designated zone
         private static List<IntVec3> resourceCells = new List<IntVec3>();
+
         //How frequently the Nanite Factory checks for related jobs
         //Increasing intervals will reduce processor demand but slow down responsiveness
         //Intervals are offset to limit the amount of processor demand during active ticks
@@ -47,18 +63,6 @@ namespace NaniteFactory
         private int deconstructSkill = 1;
         private float healSkill = .1F;
 
-        //Labels for the buttons
-        String deconstruction_label = "SPT_deconstructionNanitesEnabled".Translate();
-        String deconstruction_desc = "SPT_deconstructionNanitesEnabledDesc".Translate();
-
-        String construction_label = "SPT_constructionNanitesEnabled".Translate();
-        String construction_desc = "SPT_constructionNanitesEnabledDesc".Translate();
-
-        String repair_label = "SPT_repairNanitesEnabled".Translate();
-        String repair_desc = "SPT_repairNanitesEnabledDesc".Translate();
-
-        String heal_label = "SPT_healNanitesEnabled".Translate();
-        String heal_desc = "SPT_HealNanitesEnabledDesc".Translate();
 
         //Saved Variables - built-in QC during call; use CAP variable whenever possible
         //Repair requires -> ResearchProjectDef.Named("SPT_NaniteReconstitutionProtocols").IsFinished)
@@ -308,6 +312,7 @@ namespace NaniteFactory
 
                 }
             }
+
             //Offset execution of each function based on game tick
             if (Find.TickManager.TicksGame % this.repairInterval == 0)
             {
@@ -342,14 +347,7 @@ namespace NaniteFactory
                
                     //if that thing is not null (error checking)
                     if (jobThing != null)
-                    {
-                        //****************************
-                        //repairSkill == 1
-                        //0 == min value to compare
-                        //MaxHitPoints == max value to compare
-                        //
-                        //adds 1 hp to the "thing" until the HP reaches max.
-                        //****************************
+                    {                     
                         jobThing.HitPoints = Mathf.Clamp(jobThing.HitPoints += this.repairSkill, 0, jobThing.MaxHitPoints);
 
                         //Draw Visual On thing (Red sparkles temporary)
@@ -582,9 +580,9 @@ namespace NaniteFactory
                         action = new Action(this.MakeMatchingStockpile),
                         hotKey = KeyBindingDefOf.Misc3,
                         order = 50,
-                        defaultDesc = "SPT_MakeStockpileDesc".Translate(),
+                        defaultDesc = SPT_Labels.stockpile_desc,
                         icon = ContentFinder<Texture2D>.Get("UI/Designators/ZoneCreate_Stockpile", true),
-                        defaultLabel = "SPT_MakeStockpileLabel".Translate()
+                        defaultLabel = SPT_Labels.stockpile_label
                     };
                     gizmoList.Add(item0);
                 }
@@ -592,8 +590,8 @@ namespace NaniteFactory
                 //Deconstruction should be the first ability by default. This should not require any additional research
                 Command_Action item1 = new Command_Action
                 {
-                    defaultLabel = deconstruction_label,
-                    defaultDesc = deconstruction_desc,
+                    defaultLabel = SPT_Labels.deconstruction_label,
+                    defaultDesc = SPT_Labels.deconstruction_desc,
                     order = 68,
                     icon = SPT_MatPool.Icon_Deconstruct,
                     action = delegate
@@ -608,8 +606,8 @@ namespace NaniteFactory
 
                 Command_Action item2 = new Command_Action
                 {
-                    defaultLabel = construction_label,
-                    defaultDesc = construction_desc,
+                    defaultLabel = SPT_Labels.construction_label,
+                    defaultDesc = SPT_Labels.construction_desc,
                     order = 69,
                     icon = SPT_MatPool.Icon_Construct,
                     action = delegate
@@ -625,8 +623,8 @@ namespace NaniteFactory
 
                 Command_Action item3 = new Command_Action
                 {
-                    defaultLabel = repair_label,
-                    defaultDesc = repair_desc,
+                    defaultLabel = SPT_Labels.repair_label,
+                    defaultDesc = SPT_Labels.repair_desc,
                     order = 70,
                     icon = SPT_MatPool.Icon_Repair,
                     action = delegate
@@ -641,8 +639,8 @@ namespace NaniteFactory
 
                 Command_Action item4 = new Command_Action
                 {
-                    defaultLabel = heal_label,
-                    defaultDesc = heal_desc,
+                    defaultLabel = SPT_Labels.heal_label,
+                    defaultDesc = SPT_Labels.heal_desc,
                     order = 71,
                     icon = SPT_MatPool.Icon_Heal,
                     action = delegate
@@ -724,6 +722,7 @@ namespace NaniteFactory
                     Thing targetThing = repairableBuildings.Except(RepairJobs).RandomElement();
                     if (targetThing != null)
                     {
+                        //Need to check if the "Wireless" research is researched
                         List<IntVec3> ePath = SPT_Utility.FindElectricPath(this, targetThing);
                         if (ePath.Count > 0)
                         {
@@ -774,18 +773,7 @@ namespace NaniteFactory
             }
         }
 
-        //Names and research values/trees subject to change
-        // Research dependancies depicted with . (DOT) notation : Research 1.1 is a child of Research 1. Research 1.1.1 is a child of research 1.1 ... etc
-        //Research Tab -> Molecular Robotics
-
-        // Research 1 : Nanobot creation  // Unlocks the Nanite Factory // 2000 points to start   
-        //Research 1.1 : Nanobot Reconsititution Protocols // Unlocks the nanites ability to repair damaged, claimed structures // 2000
-        //Research 1.2 : Nanobot Construction Protocols // Unlocks the nanites ability to construct things // 2000
-        //Research 1.3 : Nanobot Mending Protocols // Unlocks the nanites ability to heal colonists // 3000
-        //Research 1.2.1 : Nanobot Delivery Protocols // Unlocks the nanites ability to deliver resources to a job site // 3000
-
-
-        //Also considering research to improve speed/carry/distance etc...
+        
 
         //Create resource stockpile
         public IEnumerable<IntVec3> ResourceCells
@@ -799,6 +787,7 @@ namespace NaniteFactory
         private void MakeMatchingStockpile()
         {
             Designator des = DesignatorUtility.FindAllowedDesignator<Designator_ZoneAddStockpile_Resources>();
+
             des.DesignateMultiCell(from c in this.ResourceCells
                                    where des.CanDesignateCell(c).Accepted
                                    select c);
