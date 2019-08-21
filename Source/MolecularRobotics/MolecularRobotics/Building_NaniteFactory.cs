@@ -18,6 +18,8 @@ namespace NaniteFactory
         private Effecter effecter;
 
         //Unsaved variables
+        //Used to determine available resources within a designated zone
+        private static List<IntVec3> resourceCells = new List<IntVec3>();
         //How frequently the Nanite Factory checks for related jobs
         //Increasing intervals will reduce processor demand but slow down responsiveness
         //Intervals are offset to limit the amount of processor demand during active ticks
@@ -255,8 +257,15 @@ namespace NaniteFactory
                 if(currentThingJob != null)
                 {
                     Vector3 rndVec = currentThingJob.DrawPos;
-                    rndVec.x += (Rand.Range(-.3f, .3f));
-                    rndVec.z += (Rand.Range(-.3f, .3f));
+                    float size = .3f;
+                    //test expanding area of motes based on building size...
+                    if (currentThingJob is Building)
+                    {
+                        Building b = currentThingJob as Building;
+                        size = b.def.Size.Magnitude;
+                    }
+                    rndVec.x += (Rand.Range(-size, size));
+                    rndVec.z += (Rand.Range(-size, size));
                     SPT_Utility.ThrowGenericMote(SPT_DefOf.SPT_Mote_NaniteRepairing, rndVec, currentThingJob.Map, Rand.Range(.02f, .2f), .1f, .3f, .3f, Rand.Range(-300, 300), 0, 0, Rand.Range(0, 360));
 
                 }
@@ -565,7 +574,21 @@ namespace NaniteFactory
                 bool canScan = true;
                 //Bill stack being... bills created at this table?
 
-               
+                //Stockpile creation button
+                if (DesignatorUtility.FindAllowedDesignator<Designator_ZoneAddStockpile_Resources>() != null)
+                {
+                    Command_Action item0 = new Command_Action
+                    {
+                        action = new Action(this.MakeMatchingStockpile),
+                        hotKey = KeyBindingDefOf.Misc3,
+                        order = 50,
+                        defaultDesc = "SPT_MakeStockpileDesc".Translate(),
+                        icon = ContentFinder<Texture2D>.Get("UI/Designators/ZoneCreate_Stockpile", true),
+                        defaultLabel = "SPT_MakeStockpileLabel".Translate()
+                    };
+                    gizmoList.Add(item0);
+                }
+
                 //Deconstruction should be the first ability by default. This should not require any additional research
                 Command_Action item1 = new Command_Action
                 {
@@ -701,6 +724,18 @@ namespace NaniteFactory
                     Thing targetThing = repairableBuildings.Except(RepairJobs).RandomElement();
                     if (targetThing != null)
                     {
+                        List<IntVec3> ePath = SPT_Utility.FindElectricPath(this, targetThing);
+                        if (ePath.Count > 0)
+                        {
+                            for (int i = 0; i < ePath.Count; i++)
+                            {
+                                MoteMaker.ThrowHeatGlow(ePath[i], this.Map, 1f);
+                            }
+                        }
+                        else
+                        {
+                            Log.Message("no path found");
+                        }
                         RepairJobs.Add(targetThing);
                     }
                     else
@@ -752,6 +787,49 @@ namespace NaniteFactory
 
         //Also considering research to improve speed/carry/distance etc...
 
+        //Create resource stockpile
+        public IEnumerable<IntVec3> ResourceCells
+        {
+            get
+            {
+                return Building_NaniteFactory.ResourceCellsAround(base.Position, base.Map);
+            }
+        }
+
+        private void MakeMatchingStockpile()
+        {
+            Designator des = DesignatorUtility.FindAllowedDesignator<Designator_ZoneAddStockpile_Resources>();
+            des.DesignateMultiCell(from c in this.ResourceCells
+                                   where des.CanDesignateCell(c).Accepted
+                                   select c);
+        }
+
+        public static List<IntVec3> ResourceCellsAround(IntVec3 pos, Map map)
+        {
+            Building_NaniteFactory.resourceCells.Clear();
+            if (!pos.InBounds(map))
+            {
+                return Building_NaniteFactory.resourceCells;
+
+            }
+            Region region = pos.GetRegion(map, RegionType.Set_Passable);
+            if (region == null)
+            {
+                return Building_NaniteFactory.resourceCells;
+            }
+            RegionTraverser.BreadthFirstTraverse(region, (Region from, Region r) => r.door == null, delegate (Region r)
+            {
+                foreach (IntVec3 current in r.Cells)
+                {
+                    if (current.InHorDistOf(pos, 3.99f))
+                    {
+                        Building_NaniteFactory.resourceCells.Add(current);
+                    }
+                }
+                return false;
+            }, 13, RegionType.Set_Passable);
+            return Building_NaniteFactory.resourceCells;
+        }
 
     }
 

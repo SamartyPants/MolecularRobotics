@@ -99,7 +99,7 @@
     <graphicData>
       <texPath>Things/Building/Misc/TempControl/Heater</texPath>
       <graphicClass>Graphic_Single</graphicClass>
-	  <drawSize>(2,2)</drawSize>
+	  <drawSize>(4.5,2.5)</drawSize>
       <shadowData>
         <volume>(0.5,0.3,0.7)</volume>
         <offset>(0,0,-0.15)</offset>
@@ -121,29 +121,33 @@
     <rotatable>false</rotatable>
     <fillPercent>0.4</fillPercent>
     <thingCategories>
-      <li>BuildingsTemperature</li>
+      <li>BuildingsProduction</li>
     </thingCategories>
     <statBases>
       <WorkToBuild>1000</WorkToBuild>
       <MaxHitPoints>100</MaxHitPoints>
-      <Mass>6</Mass>
-      <Flammability>0.5</Flammability>
+      <Mass>50</Mass>
+      <Flammability>1</Flammability>
     </statBases>
-    <tickerType>Rare</tickerType>
+    <tickerType>Normal</tickerType>
     <costList>
-      <Steel>50</Steel>
-      <ComponentIndustrial>1</ComponentIndustrial>
+      <Steel>500</Steel>
+      <ComponentIndustrial>10</ComponentIndustrial>
     </costList>
-    <terrainAffordanceNeeded>Light</terrainAffordanceNeeded>
-    <placeWorkers>
-      <li>PlaceWorker_ShowFacilitiesConnections</li>
-    </placeWorkers>
+	<building>
+		<ai_chillDestination>false</ai_chillDestination>
+	</building>
+    <terrainAffordanceNeeded>Medium</terrainAffordanceNeeded>
     <drawPlaceWorkersWhileSelected>true</drawPlaceWorkersWhileSelected>
     <comps>
       <li Class="CompProperties_Power">
         <compClass>CompPowerTrader</compClass>
         <basePowerConsumption>10</basePowerConsumption> <!-- testing power req -->
         <shortCircuitInRain>true</shortCircuitInRain>
+		<transmitsPower>true</transmitsPower>
+      </li>
+	  <li Class="CompProperties_TempControl">
+        <energyPerSecond>10</energyPerSecond>
       </li>
       <li Class="CompProperties_Flickable"/>
       <li Class="CompProperties_Glower">
@@ -153,7 +157,10 @@
 <!--       <li Class="CompProperties_Breakdownable"/> assuming a nanite factory can maintain itself-->
     </comps>
     <designationCategory>Production</designationCategory>
-    <designationHotKey>Misc3</designationHotKey>
+    <designationHotKey>Misc2</designationHotKey>
+	<placeWorkers>
+      <li>NaniteFactory.PlaceWorker_ShowResourceRadius</li>
+    </placeWorkers>
     <researchPrerequisites>
       <li>Electricity</li>
       <li>SPT_MolecularRobotics</li>

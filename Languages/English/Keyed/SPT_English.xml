@@ -17,4 +17,7 @@
 <SPT_healNanitesEnabled>Heal</SPT_healNanitesEnabled>
 <SPT_healNanitesEnabledDesc>Heal pawns using nanite factory</SPT_healNanitesEnabledDesc>
 
+<SPT_MakeStockpileDesc>Create stockpile around nanite factory.</SPT_MakeStockpileDesc>
+<SPT_MakeStockpileLabel>Create stockpile</SPT_MakeStockpileLabel>
+
 </LanguageData>

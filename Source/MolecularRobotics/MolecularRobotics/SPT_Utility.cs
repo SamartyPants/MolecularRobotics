@@ -126,5 +126,146 @@ namespace NaniteFactory
             return injurySeverity > minInjurySeverity;
         }
 
+        public static List<IntVec3> FindElectricPath(Thing from, Thing to)
+        {
+            //use a structure to record path parameters
+            //look for any transmitter nearby 
+            //nearby transmitters are considered a possible path
+            //add nearby path to list of paths
+            //multiple nearby transmitters create a new path structure that gets enumerated
+            //terminate a paths if no nearby transmitter is found
+
+            Map map = from.Map;
+            List<IntVec3> allCells = new List<IntVec3>();
+            allCells.Clear();
+            List<IntVec3> startList = new List<IntVec3>();
+            startList.Add(from.Position);
+            List<IntVec3> bestPath = new List<IntVec3>();
+            List<EPath> pathFinder = new List<EPath>();
+            pathFinder.Clear();
+            pathFinder.Add(new EPath(0, 0, false, from.Position, startList));
+            bool pathFound = false;
+            int bestPathIndex = 0;
+
+            for (int i = 0; i < 200; i++) //fail after 200 path attempts
+            {
+                for (int j = 0; j < pathFinder.Count; j++)
+                {
+                    if (!pathFinder[j].ended)
+                    {
+                        List<IntVec3> cellList = GenRadial.RadialCellsAround(pathFinder[j].currentCell, 1f, true).ToList();
+                        List<IntVec3> validCells = new List<IntVec3>();
+                        validCells.Clear();
+                        for (int k = 0; k < cellList.Count; k++)
+                        {
+                            if (!allCells.Contains(cellList[k]) && CellHasConduit(cellList[k], map))
+                            {
+                                allCells.Add(cellList[k]);
+                                validCells.Add(cellList[k]);
+                            }
+                        }
+                        if (validCells.Count > 0)
+                        {
+                            for (int k = 0; k < validCells.Count; k++)
+                            {
+                                if (k == 0)
+                                {
+                                    //continue path in a single direction; additional possible paths create a branch
+                                    pathFinder[j].pathList.Add(validCells[k]);
+                                    pathFinder[j] = new EPath(pathFinder[j].pathParent, pathFinder[j].pathParentSplitIndex, false, validCells[k], pathFinder[j].pathList);
+                                    if ((to.Position - validCells[k]).LengthHorizontal <= 4)
+                                    {
+                                        pathFound = true;
+                                        bestPathIndex = j;
+                                    }
+                                }
+                                else
+                                {
+                                    //create new paths
+                                    List<IntVec3> newList = new List<IntVec3>();
+                                    newList.Clear();
+                                    newList.Add(validCells[k]);
+                                    pathFinder.Add(new EPath(j, pathFinder[j].pathList.Count, false, validCells[k], newList));
+                                    if ((to.Position - validCells[k]).LengthHorizontal <= 4)
+                                    {
+                                        pathFound = true;
+                                        bestPathIndex = j;
+                                    }
+                                }
+                            }
+                        }
+                        else
+                        {
+                            //end path
+                            pathFinder[j] = new EPath(pathFinder[j].pathParent, pathFinder[j].pathParentSplitIndex, true, pathFinder[j].currentCell, pathFinder[j].pathList);
+                        }
+                    }
+                }
+
+                if (pathFound)
+                {
+                    //Evaluate best path, reverse, and return
+                    bestPath = GetBestPath(pathFinder, bestPathIndex);
+                    bestPath.Reverse();
+                    break;
+                }
+            }
+
+            return bestPath;
+        }
+
+        public static List<IntVec3> GetBestPath(List<EPath> pathFinder, int index)
+        {
+            //Evaluates path structure from ending cell to start cell
+            //First evaluated path always uses full list
+            //Following paths can be branched; eliminate excess cells from those lists 
+            //by recording when the valid path branches
+            List<IntVec3> tracebackList = new List<IntVec3>();
+            tracebackList.Clear();
+            bool tracebackComplete = false;
+            int parentIndexCount = pathFinder[index].pathList.Count;
+
+            while (!tracebackComplete)
+            {
+                //ignore index 0 (starting point)
+                if (index != 0)
+                {
+                    for (int i = 0; i < parentIndexCount; i++)
+                    {
+                        //construct the reverse path
+                        tracebackList.Add(pathFinder[index].pathList[i]);
+                    }
+                }
+
+                if (index == 0)
+                {
+                    //finished return path
+                    tracebackComplete = true;
+                }
+                else
+                {
+                    //construct valid reverse path from point path branches from parent
+                    parentIndexCount = pathFinder[index].pathParentSplitIndex;
+                    index = pathFinder[index].pathParent;
+                }
+            }
+            return tracebackList;
+        }
+
+        public static bool CellHasConduit(IntVec3 cell, Map map)
+        {
+            //Determines if a cell has an active transmitter
+            bool hasConduit = false;
+            if (cell != default(IntVec3) && cell.InBounds(map))
+            {
+                Building transmitter = cell.GetTransmitter(map);
+                if (transmitter != null && transmitter.TransmitsPowerNow)
+                {
+                    hasConduit = true;
+                }
+            }
+            return hasConduit;
+        }
+
     }
 }
