@@ -13,6 +13,36 @@
 		<researchViewX>0.0</researchViewX>
 		<researchViewY>0.0</researchViewY>
 	</ResearchProjectDef>
+	<ResearchProjectDef>
+		<defName>SPT_NaniteReconstitutionProtocols</defName>
+		<label>Nanite Reconstitution Protocols</label>
+		<tab>SPT_MolecularRobotics</tab>
+		<description>Allows the Nanite Factory to create nanites to repair damaged structures.</description>
+		<baseCost>2000</baseCost>
+		<techLevel>Neolithic</techLevel>
+		<researchViewX>0.0</researchViewX>
+		<researchViewY>0.0</researchViewY>
+	</ResearchProjectDef>
+	<ResearchProjectDef>
+		<defName>SPT_NaniteConstructionProtocols</defName>
+		<label>Nanite Construction Protocols</label>
+		<tab>SPT_MolecularRobotics</tab>
+		<description>Allows the Nanite Factory to create nanites to construct structures.</description>
+		<baseCost>2000</baseCost>
+		<techLevel>Neolithic</techLevel>
+		<researchViewX>0.0</researchViewX>
+		<researchViewY>0.0</researchViewY>
+	</ResearchProjectDef>
+	<ResearchProjectDef>
+		<defName>SPT_NaniteMendingProtocols</defName>
+		<label>Nanite Mending Protocols</label>
+		<tab>SPT_MolecularRobotics</tab>
+		<description>Allows the Nanite Factory to create nanites to heal colonists.</description>
+		<baseCost>2000</baseCost>
+		<techLevel>Neolithic</techLevel>
+		<researchViewX>0.0</researchViewX>
+		<researchViewY>0.0</researchViewY>
+	</ResearchProjectDef>
 	
 
 </Defs>

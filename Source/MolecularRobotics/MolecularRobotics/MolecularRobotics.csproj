@@ -33,6 +33,7 @@
   <ItemGroup>
     <Reference Include="0Harmony">
       <HintPath>..\..\..\..\..\..\..\..\..\..\Assemblies\Release\net35\0Harmony.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="Assembly-CSharp">
       <HintPath>B:\SteamLibrary\steamapps\common\RimWorld\RimWorldWin64_Data\Managed\Assembly-CSharp.dll</HintPath>
@@ -49,10 +50,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Building_NaniteFactory.cs" />
+    <Compile Include="PlaceWorker_ShowResourceRadius.cs" />
     <Compile Include="SPT_NaniteActions.cs" />
     <Compile Include="SPT_DefOf.cs" />
     <Compile Include="SPT_MatPool.cs" />
     <Compile Include="SPT_FlyingObject.cs" />
+    <Compile Include="SPT_Structs.cs" />
     <Compile Include="SPT_Utility.cs" />
     <Compile Include="Harmony\HarmonyPatches.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

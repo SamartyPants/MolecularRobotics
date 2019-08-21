@@ -14,5 +14,8 @@ namespace NaniteFactory
 
         //Motes
         public static ThingDef SPT_Mote_NaniteWorking;
+        public static ThingDef SPT_Mote_NaniteRepairing;
+        public static ThingDef SPT_Mote_NaniteHealing;
+        public static ThingDef SPT_Mote_NaniteConstructing;
     }
 }

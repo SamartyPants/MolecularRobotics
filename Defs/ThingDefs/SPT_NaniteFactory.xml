@@ -91,38 +91,83 @@
     </researchPrerequisites>
   </ThingDef>
   
-  <!-- <AbilityUser.AbilityDef ParentName="BaseAbility">
-        <defName>Forge_Verb</defName>
-        <label>secondary targeter</label>
-        <uiIconPath>UI/replicate</uiIconPath>
-        <description>verb used forge replication</description>
-		<MainVerb Class="AbilityUser.VerbProperties_Ability">
-            <verbClass>AbilityUser.Verb_UseAbility</verbClass>
-				<tooltipShowProjectileDamage>false</tooltipShowProjectileDamage>
-				<tooltipShowExtraDamages>false</tooltipShowExtraDamages>
-				<tooltipShowHediffsToApply>false</tooltipShowHediffsToApply>
-				<tooltipShowMentalStatesToApply>false</tooltipShowMentalStatesToApply>
-            <hasStandardCommand>true</hasStandardCommand>
-            <defaultProjectile>Projectile_Warlock</defaultProjectile>
-            <abilityDef>Forge_Verb</abilityDef>
-			<isViolent>false</isViolent>
-            <warmupTime>0</warmupTime>
-            <SecondsToRecharge>0</SecondsToRecharge>
-            <range>40</range>
-			<ticksBetweenBurstShots>1</ticksBetweenBurstShots>
-            <burstShotCount>1</burstShotCount>
-            <soundCast>TM_VibrationLow</soundCast>
-			<soundCastTail>GunTail_Medium</soundCastTail>
-            <muzzleFlashScale>2</muzzleFlashScale>
-		    <AlwaysHits>true</AlwaysHits>
-            <isPrimary>true</isPrimary>
-			<targetParams>
-                <canTargetPawns>false</canTargetPawns>
-                <canTargetBuildings>true</canTargetBuildings>
-                <canTargetSelf>false</canTargetSelf>
-                <canTargetLocations>true</canTargetLocations>
-            </targetParams>
-        </MainVerb>
-    </AbilityUser.AbilityDef> -->
+  <ThingDef ParentName="SPT_BuildingBase">
+    <defName>SPT_NaniteFactory</defName>
+    <label>Nanite Factory</label>
+    <description>The Nanite Factory creates billions of molecular robots that are capable of all sorts of stuff.</description>
+    <thingClass>NaniteFactory.Building_NaniteFactory</thingClass>
+    <graphicData>
+      <texPath>Things/Building/Misc/TempControl/Heater</texPath>
+      <graphicClass>Graphic_Single</graphicClass>
+	  <drawSize>(4.5,2.5)</drawSize>
+      <shadowData>
+        <volume>(0.5,0.3,0.7)</volume>
+        <offset>(0,0,-0.15)</offset>
+      </shadowData>
+      <damageData>
+        <rect>(0.234375,0,0.515625,0.984375)</rect>
+        <cornerTL>Damage/Corner</cornerTL>
+        <cornerTR>Damage/Corner</cornerTR>
+        <cornerBL>Damage/Corner</cornerBL>
+        <cornerBR>Damage/Corner</cornerBR>
+      </damageData>
+    </graphicData>
+	<size>(3,2)</size>
+    <minifiedDef>MinifiedThing</minifiedDef>
+    <altitudeLayer>Building</altitudeLayer>
+    <passability>PassThroughOnly</passability>
+    <pathCost>100</pathCost>
+    <blockWind>true</blockWind>
+    <rotatable>false</rotatable>
+    <fillPercent>0.4</fillPercent>
+    <thingCategories>
+      <li>BuildingsProduction</li>
+    </thingCategories>
+    <statBases>
+      <WorkToBuild>1000</WorkToBuild>
+      <MaxHitPoints>100</MaxHitPoints>
+      <Mass>50</Mass>
+      <Flammability>1</Flammability>
+    </statBases>
+    <tickerType>Normal</tickerType>
+    <costList>
+      <Steel>500</Steel>
+      <ComponentIndustrial>10</ComponentIndustrial>
+    </costList>
+	<building>
+		<ai_chillDestination>false</ai_chillDestination>
+	</building>
+    <terrainAffordanceNeeded>Medium</terrainAffordanceNeeded>
+    <drawPlaceWorkersWhileSelected>true</drawPlaceWorkersWhileSelected>
+    <comps>
+      <li Class="CompProperties_Power">
+        <compClass>CompPowerTrader</compClass>
+        <basePowerConsumption>10</basePowerConsumption> <!-- testing power req -->
+        <shortCircuitInRain>true</shortCircuitInRain>
+		<transmitsPower>true</transmitsPower>
+      </li>
+	  <li Class="CompProperties_TempControl">
+        <energyPerSecond>10</energyPerSecond>
+      </li>
+      <li Class="CompProperties_Flickable"/>
+      <li Class="CompProperties_Glower">
+        <glowRadius>5</glowRadius>
+        <glowColor>(0,128,255,0)</glowColor>
+      </li>
+<!--       <li Class="CompProperties_Breakdownable"/> assuming a nanite factory can maintain itself-->
+    </comps>
+    <designationCategory>Production</designationCategory>
+    <designationHotKey>Misc2</designationHotKey>
+	<placeWorkers>
+      <li>NaniteFactory.PlaceWorker_ShowResourceRadius</li>
+    </placeWorkers>
+    <researchPrerequisites>
+      <li>Electricity</li>
+      <li>SPT_MolecularRobotics</li>
+    </researchPrerequisites>
+    <constructionSkillPrerequisite>8</constructionSkillPrerequisite>
+  </ThingDef>
+  
+
 
 </Defs>
