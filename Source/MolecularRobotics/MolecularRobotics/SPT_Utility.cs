@@ -31,6 +31,21 @@ namespace NaniteFactory
             GenSpawn.Spawn(moteThrown, loc.ToIntVec3(), map);
         }
 
+        public static Vector3 GetVector(Vector3 center, Vector3 objectPos)
+        {
+            Vector3 heading = (objectPos - center);
+            float distance = heading.magnitude;
+            Vector3 direction = heading / distance;
+            return direction;
+        }
+
+        public static Vector3 GetVector(IntVec3 center, IntVec3 objectPos)
+        {
+            Vector3 centerV = center.ToVector3Shifted();
+            Vector3 objectPosV = objectPos.ToVector3Shifted();
+            return GetVector(centerV, objectPosV);
+        }
+
         //Method responsible for finding buildings that are repairable in home area
         public static List<Thing> FindRepairBuildings(Map map, Faction faction)
         {

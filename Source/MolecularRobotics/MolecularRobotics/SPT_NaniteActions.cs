@@ -16,4 +16,12 @@ namespace NaniteFactory
         Destroy,
         Heal
     }
+
+    public enum NaniteDispersal : byte
+    {
+        ExplosionMist,
+        Spray,
+        Invisible
+    }
+
 }

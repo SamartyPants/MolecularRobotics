@@ -25,15 +25,17 @@ namespace NaniteFactory
         public ThingDef moteDef = null;
         public int moteFrequency = 0;
 
-        public bool spinning = false;
-        public float curveVariance = 0; // 0 = no curve
+        public bool spinning = false;        
+        public float curveVariance = 0; // 0 = no curve, straight flight
         private List<Vector3> curvePoints = new List<Vector3>();
         public float force = 1f;
         private int destinationCurvePoint = 0;
         private float impactRadius = 0;
-        private int explosionDamage;
+        private int explosionDamage = 0;
         private bool isExplosive = false;
         private DamageDef impactDamageType = null;
+        private bool flyOverhead = false;
+        private NaniteDispersal dispersalMethod = NaniteDispersal.Invisible;
 
         private bool earlyImpact = false;
         private float impactForce = 0;
@@ -146,6 +148,17 @@ namespace NaniteFactory
             this.Launch(launcher, origin, targ, flyingThing, newDamageInfo);
         }
 
+        public void ExactLaunch(ThingDef effectMote, int moteFrequencyTicks, bool shouldSpin, List<Vector3> travelPath, Thing launcher, Vector3 origin, LocalTargetInfo targ, Thing flyingThing, int flyingSpeed, float _impactRadius)
+        {
+            this.moteFrequency = moteFrequencyTicks;
+            this.moteDef = effectMote;
+            this.impactRadius = _impactRadius;
+            this.spinning = shouldSpin;
+            this.speed = flyingSpeed;
+            this.curvePoints = travelPath;
+            this.Launch(launcher, origin, targ, flyingThing, null);
+        }
+
         public void Launch(Thing launcher, Vector3 origin, LocalTargetInfo targ, Thing flyingThing, DamageInfo? newDamageInfo = null)
         {
             bool spawned = flyingThing.Spawned;
@@ -166,9 +179,14 @@ namespace NaniteFactory
             }
             this.speed = this.speed * this.force;
             this.origin = origin;
-            if (this.curveVariance > 0)
+            if (this.curveVariance > 0 && this.curvePoints.Count == 0)
             {
                 CalculateCurvePoints(this.trueOrigin, this.trueDestination, this.curveVariance);
+                this.destinationCurvePoint++;
+                this.destination = this.curvePoints[this.destinationCurvePoint];
+            }
+            else if(this.curveVariance == 0 && this.curvePoints.Count > 0)
+            {
                 this.destinationCurvePoint++;
                 this.destination = this.curvePoints[this.destinationCurvePoint];
             }
@@ -183,7 +201,7 @@ namespace NaniteFactory
         public void CalculateCurvePoints(Vector3 start, Vector3 end, float variance)
         {
             int variancePoints = 20;
-            Vector3 initialVector = GetVector(start, end);
+            Vector3 initialVector = SPT_Utility.GetVector(start, end);
             initialVector.y = 0;
             float initialAngle = (initialVector).ToAngleFlat(); //Quaternion.AngleAxis(90, Vector3.up) *
             float curveAngle = 0;
@@ -208,14 +226,6 @@ namespace NaniteFactory
                 this.curvePoints.Add(this.curvePoints[i - 1] + ((Quaternion.AngleAxis(curveAngle, Vector3.up) * initialVector) * incrementalDistance)); //(Quaternion.AngleAxis(curveAngle, Vector3.up) *
                 curveAngle -= incrementalAngle;
             }
-        }
-
-        public Vector3 GetVector(Vector3 center, Vector3 objectPos)
-        {
-            Vector3 heading = (objectPos - center);
-            float distance = heading.magnitude;
-            Vector3 direction = heading / distance;
-            return direction;
         }
 
         public override void Tick()
@@ -243,10 +253,10 @@ namespace NaniteFactory
             else
             {
                 base.Position = this.ExactPosition.ToIntVec3();
-                if (Find.TickManager.TicksGame % 3 == 0)
-                {
-                    MoteMaker.ThrowDustPuff(base.Position, base.Map, Rand.Range(0.6f, .8f));
-                }
+                //if (Find.TickManager.TicksGame % 3 == 0)
+                //{
+                //    MoteMaker.ThrowDustPuff(base.Position, base.Map, Rand.Range(0.6f, .8f));
+                //}
 
                 bool flag2 = this.ticksToImpact <= 0;
                 if (flag2)
@@ -315,8 +325,8 @@ namespace NaniteFactory
 
         private void DrawEffects(Vector3 effectVec)
         {
-            effectVec.x += Rand.Range(-0.4f, 0.4f);
-            effectVec.z += Rand.Range(-0.4f, 0.4f);
+            effectVec.x += Rand.Range(-0.2f, 0.2f);
+            effectVec.z += Rand.Range(-0.2f, 0.2f);
             SPT_Utility.ThrowGenericMote(this.moteDef, effectVec, this.Map, Rand.Range(.4f, .6f), Rand.Range(.05f, .1f), .03f, Rand.Range(.2f, .3f), Rand.Range(-200, 200), Rand.Range(.5f, 2f), Rand.Range(0, 360), Rand.Range(0, 360));
         }
 
@@ -369,8 +379,7 @@ namespace NaniteFactory
                     Pawn p = this.flyingThing as Pawn;
                     if (this.earlyImpact)
                     {
-                        damageEntities(p, this.impactForce, DamageDefOf.Blunt);
-                        damageEntities(p, 2 * this.impactForce, DamageDefOf.Stun);
+
                     }
                     this.Destroy(DestroyMode.Vanish);
                 }
@@ -403,24 +412,13 @@ namespace NaniteFactory
                             {
                                 if (hitList[j] is Pawn && hitList[j] != this.pawn)
                                 {
-                                    damageEntities(hitList[j], this.explosionDamage, this.impactDamageType);
+
                                 }
                             }
                         }
                     }
                 }
                 this.Destroy(DestroyMode.Vanish);
-            }
-        }
-
-        public void damageEntities(Thing e, float d, DamageDef type)
-        {
-            int amt = Mathf.RoundToInt(Rand.Range(.75f, 1.25f) * d);
-            DamageInfo dinfo = new DamageInfo(type, amt, 0, (float)-1, this.pawn, null, null, DamageInfo.SourceCategory.ThingOrUnknown);
-            bool flag = e != null;
-            if (flag)
-            {
-                e.TakeDamage(dinfo);
             }
         }
     }

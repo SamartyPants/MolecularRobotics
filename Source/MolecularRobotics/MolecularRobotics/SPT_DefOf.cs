@@ -5,7 +5,7 @@ using Verse;
 namespace NaniteFactory
 {
     [DefOf]
-    class SPT_DefOf
+    public class SPT_DefOf : Def
     {       
         /* Repository of Defs for precaching and efficient access */
 
