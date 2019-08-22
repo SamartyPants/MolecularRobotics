@@ -46,6 +46,17 @@ namespace NaniteFactory
             return GetVector(centerV, objectPosV);
         }
 
+        public static List<Vector3> IntVec3List_To_Vector3List(List<IntVec3> intVecList)
+        {
+            List<Vector3> vector3List = new List<Vector3>();
+            vector3List.Clear();
+            for(int i =0; i < intVecList.Count; i++)
+            {
+                vector3List.Add(intVecList[i].ToVector3Shifted());
+            }
+            return vector3List;
+        }
+
         //Method responsible for finding buildings that are repairable in home area
         public static List<Thing> FindRepairBuildings(Map map, Faction faction)
         {
@@ -141,7 +152,7 @@ namespace NaniteFactory
             return injurySeverity > minInjurySeverity;
         }
 
-        public static List<IntVec3> FindElectricPath(Thing from, Thing to)
+        public static List<IntVec3> FindElectricPath(Thing from, Thing to, IntVec3 startPos)
         {
             //use a structure to record path parameters
             //look for any transmitter nearby 
@@ -159,8 +170,9 @@ namespace NaniteFactory
             allCells.Clear();
             pathFinder.Clear();
 
-            startList.Add(from.Position);                 
-            pathFinder.Add(new EPath(0, 0, false, from.Position, startList));
+            startList.Add(startPos);
+            //allCells.Add(startPos);
+            pathFinder.Add(new EPath(0, 0, false, startPos, startList));
 
             bool pathFound = false;
             int bestPathIndex = 0;
@@ -176,7 +188,7 @@ namespace NaniteFactory
                         validCells.Clear();
                         for (int k = 0; k < cellList.Count; k++)
                         {
-                            if (!allCells.Contains(cellList[k]) && CellHasConduit(cellList[k], map))
+                            if (!allCells.Contains(cellList[k]) && CellHasConduit(cellList[k], map) && cellList[k].GetFirstBuilding(map) != from)
                             {
                                 allCells.Add(cellList[k]);
                                 validCells.Add(cellList[k]);
@@ -224,7 +236,7 @@ namespace NaniteFactory
                 {
                     //Evaluate best path, reverse, and return
                     bestPath = GetBestPath(pathFinder, bestPathIndex);
-                    bestPath.Reverse();
+                    //bestPath.Reverse();
                     break;
                 }
             }
@@ -239,19 +251,25 @@ namespace NaniteFactory
             //Following paths can be branched; eliminate excess cells from those lists 
             //by recording when the valid path branches
             List<IntVec3> tracebackList = new List<IntVec3>();
+            
             tracebackList.Clear();
+            
             bool tracebackComplete = false;
-            int parentIndexCount = pathFinder[index].pathList.Count;
+            int parentIndexCount = pathFinder[index].pathList.Count;            
 
             while (!tracebackComplete)
             {
+                List<IntVec3> tmpTrace = new List<IntVec3>();
+                tmpTrace.Clear();
                 //ignore index 0 (starting point)
                 if (index != 0)
                 {
                     for (int i = 0; i < parentIndexCount; i++)
                     {
                         //construct the reverse path
-                        tracebackList.Add(pathFinder[index].pathList[i]);
+                        //tracebackList.Add(pathFinder[index].pathList[i]);
+                        tmpTrace.Add(pathFinder[index].pathList[i]);
+                        //Log.Message("index " + index + " path " + pathFinder[index].pathList[i]);
                     }
                 }
 
@@ -263,10 +281,17 @@ namespace NaniteFactory
                 else
                 {
                     //construct valid reverse path from point path branches from parent
+                    tmpTrace.Reverse();
+                    for (int i = 0; i < tmpTrace.Count; i++)
+                    {
+                        Log.Message("" + tmpTrace[i]);
+                    }
+                    tracebackList.AddRange(tmpTrace);
                     parentIndexCount = pathFinder[index].pathParentSplitIndex;
                     index = pathFinder[index].pathParent;
                 }
             }
+            tracebackList.Reverse();
             return tracebackList;
         }
 

@@ -9,7 +9,7 @@
 			<texPath>Things/Mote/PowerBeam</texPath>
 			<graphicClass>Graphic_Single</graphicClass>
 			<shaderType>MoteGlow</shaderType>
-			<color>(.4,.65,1)</color>
+			<color>(1,.2,.2)</color>
 			<drawSize>(1, 1)</drawSize>
 		</graphicData>
 	   <projectile>

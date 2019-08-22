@@ -139,6 +139,8 @@
 	</building>
     <terrainAffordanceNeeded>Medium</terrainAffordanceNeeded>
     <drawPlaceWorkersWhileSelected>true</drawPlaceWorkersWhileSelected>
+	<hasInteractionCell>True</hasInteractionCell>
+    <interactionCellOffset>(0,0,-1)</interactionCellOffset>
     <comps>
       <li Class="CompProperties_Power">
         <compClass>CompPowerTrader</compClass>

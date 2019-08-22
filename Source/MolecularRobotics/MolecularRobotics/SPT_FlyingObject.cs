@@ -156,11 +156,13 @@ namespace NaniteFactory
             this.spinning = shouldSpin;
             this.speed = flyingSpeed;
             this.curvePoints = travelPath;
+            this.curveVariance = 1;
             this.Launch(launcher, origin, targ, flyingThing, null);
         }
 
         public void Launch(Thing launcher, Vector3 origin, LocalTargetInfo targ, Thing flyingThing, DamageInfo? newDamageInfo = null)
         {
+            Log.Message("launching object");
             bool spawned = flyingThing.Spawned;
             this.pawn = launcher as Pawn;
             if (spawned)
@@ -185,7 +187,7 @@ namespace NaniteFactory
                 this.destinationCurvePoint++;
                 this.destination = this.curvePoints[this.destinationCurvePoint];
             }
-            else if(this.curveVariance == 0 && this.curvePoints.Count > 0)
+            else if(this.curveVariance > 0 && this.curvePoints.Count > 0)
             {
                 this.destinationCurvePoint++;
                 this.destination = this.curvePoints[this.destinationCurvePoint];

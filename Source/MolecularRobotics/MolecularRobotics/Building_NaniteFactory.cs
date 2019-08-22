@@ -723,15 +723,25 @@ namespace NaniteFactory
                     if (targetThing != null)
                     {
                         //Need to check if the "Wireless" research is researched
-                        List<IntVec3> ePath = SPT_Utility.FindElectricPath(this, targetThing);
+                        List<IntVec3> ePath = SPT_Utility.FindElectricPath(this, targetThing, this.InteractionCell);
                      
                         if (ePath.Count > 0)
                         {
-                            for (int i = 0; i < ePath.Count; i++)
-                            {                    
-                                MoteMaker.ThrowHeatGlow(ePath[i], this.Map, 1f);
+                            //Replacing 'test' functionality with actual delivery and tracking
+                            //for (int i = 0; i < ePath.Count; i++)
+                            //{                    
+                            //    MoteMaker.ThrowHeatGlow(ePath[i], this.Map, 1f);
+                            //}
+                            //RepairJobs.Add(targetThing);
+                            if(SPT_DefOf.SPT_NaniteWirelessAdaptation.IsFinished)
+                            {
+                                //Do wireless delivery method...
                             }
-                            RepairJobs.Add(targetThing);
+                            else
+                            {
+                                //Do wired delivery method
+                                NaniteDelivery_Wired(targetThing, SPT_Utility.IntVec3List_To_Vector3List(ePath));
+                            }
                         }
                         else
                         {
@@ -775,7 +785,27 @@ namespace NaniteFactory
             }
         }
 
-        
+        public void NaniteDelivery_Wired(LocalTargetInfo target, List<Vector3> path)
+        {
+            LocalTargetInfo t = target;
+            bool flag = t.Cell != default(IntVec3);
+            if (flag)
+            {
+                Thing launchedThing = new Thing()
+                {
+                    def = SPT_DefOf.SPT_FlyingObject
+                };
+                Thing launcher = this;
+                SPT_FlyingObject flyingObject = (SPT_FlyingObject)GenSpawn.Spawn(SPT_DefOf.SPT_FlyingObject, this.Position, this.Map);  //replace this.Position with this.interactionCell (Building)
+                flyingObject.ExactLaunch(null, 0, false, path, launcher, path[0], t, launchedThing, 50, 0);
+                //LongEventHandler.QueueLongEvent(delegate
+                //{
+                    
+                //}, "LaunchingFlyer", false, null);
+            }
+        }
+
+
 
         //Create resource stockpile
         public IEnumerable<IntVec3> ResourceCells
