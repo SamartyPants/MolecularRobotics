@@ -861,7 +861,7 @@ namespace NaniteFactory
                 };
                 Thing launcher = this;
                 SPT_FlyingObject flyingObject = (SPT_FlyingObject)GenSpawn.Spawn(SPT_DefOf.SPT_FlyingObject, this.Position, this.Map);  //replace this.Position with this.interactionCell (Building)
-                flyingObject.ExactLaunch(null, 0, false, path, launcher, path[0], t, launchedThing, 20, 0);
+                flyingObject.ExactLaunch(null, 0, false, path, launcher, path[0], t, launchedThing, 10, 0);
                 //LongEventHandler.QueueLongEvent(delegate
                 //{
                     
