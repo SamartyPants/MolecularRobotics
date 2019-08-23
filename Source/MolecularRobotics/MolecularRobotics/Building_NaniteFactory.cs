@@ -316,19 +316,36 @@ namespace NaniteFactory
             //Offset execution of each function based on game tick
             if (Find.TickManager.TicksGame % this.repairInterval == 0)
             {
-                DoRepairJobs();
+                if((this.UseFixedConstruction && this.UseFixedDeconstruction && this.UseFixedHealing) != true && this.UseFixedRepairing == true)
+                {
+                    sendNanitesRepair();
+                    DoRepairJobs();
+                }
+              
             }
             if (Find.TickManager.TicksGame % this.constructInterval == 0)
             {
-                DoConstructJobs();
+                if ((this.UseFixedRepairing && this.UseFixedDeconstruction && this.UseFixedHealing) != true && this.UseFixedConstruction == true)
+                {
+                    sendNanitesConstruct();
+                    DoConstructJobs();
+                }
             }
             if (Find.TickManager.TicksGame % this.deconstructInterval == 0)
             {
-                DoDeconstructJobs();
+                if ((this.UseFixedConstruction && this.UseFixedRepairing && this.UseFixedHealing) != true && this.UseFixedDeconstruction == true)
+                {
+                    sendNanitesDeconstruct();
+                    DoDeconstructJobs();
+                }
             }
             if (Find.TickManager.TicksGame % this.healInterval == 0)
             {
-                DoHealJobs();
+                if ((this.UseFixedConstruction && this.UseFixedDeconstruction && this.UseFixedRepairing) != true && this.UseFixedHealing == true)
+                {
+                    sendNanitesHeal();
+                    DoHealJobs();
+                }
             }
         }
 
@@ -558,25 +575,143 @@ namespace NaniteFactory
             //    this.effecter.Cleanup();
             //}
         }
+
+     
+        public void ToggleUseFixed(int flag)
+        {
+            switch (flag)
+            {
+                //Deconstruction
+                case 1:
+                    this.UseFixedDeconstruction = true;
+                    this.UseFixedConstruction = false;
+                    this.UseFixedHealing = false;
+                    this.UseFixedRepairing = false;
+                    break;
+                //Construction
+                case 2:
+                    this.UseFixedDeconstruction = false;
+                    this.UseFixedConstruction = true;
+                    this.UseFixedHealing = false;
+                    this.UseFixedRepairing = false;
+                    break;
+                //healing
+                case 3:
+                    this.UseFixedDeconstruction = false;
+                    this.UseFixedConstruction = false;
+                    this.UseFixedHealing = true;
+                    this.UseFixedRepairing = false;
+                    break;
+                //repairing
+                case 4:
+                    this.UseFixedDeconstruction = false;
+                    this.UseFixedConstruction = false;
+                    this.UseFixedHealing = false;
+                    this.UseFixedRepairing = true;
+                    break;
+                default:
+                    //Something went wrong...
+                    this.UseFixedDeconstruction = false;
+                    this.UseFixedConstruction = false;
+                    this.UseFixedHealing = false;
+                    this.UseFixedRepairing = false;
+                    break;
+            }
+            
+            
+        }
+     
         public override IEnumerable<Gizmo> GetGizmos()
         {
+          
             var gizmoList = base.GetGizmos().ToList();
-
-            //Check to make sure research is complete
-            //Should require research before construction of the nanite factory? -> Yes, Research required to unlock nanite factory.
-            //Further research can provide additional functionality? -> Yes, futher research unlocks repair/construct/heal
-
-
             if (true)//ResearchProjectDef.Named("SPT_MolecularRobotics").IsFinished)
             {
-                bool canScan = true;
-                //Bill stack being... bills created at this table?
+
+                if ((this as Building).Faction == Faction.OfPlayer)
+                {
+                    gizmoList.Add( new Command_Toggle
+                    {
+                        //hotKey = KeyBindingDefOf.Command_TogglePower,
+                        icon = SPT_MatPool.Icon_Deconstruct,
+                        defaultLabel = SPT_Labels.deconstruction_label,
+                        defaultDesc = SPT_Labels.deconstruction_desc,
+                        isActive = (() => (this.UseFixedDeconstruction == true)),
+                        toggleAction = delegate
+                        {
+                            //1 = deconstruct
+                            ToggleUseFixed(1);                        
+                            if (Find.TickManager.TicksGame % this.deconstructInterval == 0)
+                            {
+                                sendNanitesDeconstruct();
+                            }
+                                                            
+                        }
+                    });
+                    gizmoList.Add(new Command_Toggle
+                    {
+                        //hotKey = KeyBindingDefOf.Command_TogglePower,
+                        icon = SPT_MatPool.Icon_Construct,
+                        defaultLabel = SPT_Labels.construction_label,
+                        defaultDesc = SPT_Labels.construction_desc,
+                        isActive = (() => (this.UseFixedConstruction == true)),
+                        toggleAction = delegate
+                        {
+                            //2 = construct
+                            ToggleUseFixed(2);
+                            if (Find.TickManager.TicksGame % this.constructInterval == 0)
+                            {
+                                sendNanitesConstruct();
+                            }
+                                                            
+                        }
+                    });
+                    gizmoList.Add(new Command_Toggle
+                    {
+                        //hotKey = KeyBindingDefOf.Command_TogglePower,
+                        icon = SPT_MatPool.Icon_Heal,
+                        defaultLabel = SPT_Labels.heal_label,
+                        defaultDesc = SPT_Labels.heal_desc,
+                        isActive = (() => (this.UseFixedHealing == true)),
+                        toggleAction = delegate
+                        {
+                            //3 = heal
+                            ToggleUseFixed(3);
+                            if (Find.TickManager.TicksGame % this.healInterval == 0)
+                            {
+                                sendNanitesHeal();
+                            }
+
+                        }
+                    });
+                    gizmoList.Add(new Command_Toggle
+                    {
+                        //hotKey = KeyBindingDefOf.Command_TogglePower,
+                        icon = SPT_MatPool.Icon_Repair,
+                        defaultLabel = SPT_Labels.repair_label,
+                        defaultDesc = SPT_Labels.repair_desc,
+                        isActive = (() => (this.UseFixedRepairing == true)),
+                        toggleAction = delegate
+                        {
+                            //4 = repair
+                            ToggleUseFixed(4);
+                                if (Find.TickManager.TicksGame % this.repairInterval == 0)
+                                {
+                                    sendNanitesRepair();
+                                }
+                            
+                           
+                        }
+                    });
+                   
+                }
 
                 //Stockpile creation button
                 if (DesignatorUtility.FindAllowedDesignator<Designator_ZoneAddStockpile_Resources>() != null)
                 {
                     Command_Action item0 = new Command_Action
                     {
+
                         action = new Action(this.MakeMatchingStockpile),
                         hotKey = KeyBindingDefOf.Misc3,
                         order = 50,
@@ -586,72 +721,6 @@ namespace NaniteFactory
                     };
                     gizmoList.Add(item0);
                 }
-
-                //Deconstruction should be the first ability by default. This should not require any additional research
-                Command_Action item1 = new Command_Action
-                {
-                    defaultLabel = SPT_Labels.deconstruction_label,
-                    defaultDesc = SPT_Labels.deconstruction_desc,
-                    order = 68,
-                    icon = SPT_MatPool.Icon_Deconstruct,
-                    action = delegate
-                    {
-                        Log.Message("ACTION 1");
-                        isDeconstructing = true;
-                        sendNanitesDeconstruct();
-                      
-                    }
-                };
-                gizmoList.Add(item1);
-
-                Command_Action item2 = new Command_Action
-                {
-                    defaultLabel = SPT_Labels.construction_label,
-                    defaultDesc = SPT_Labels.construction_desc,
-                    order = 69,
-                    icon = SPT_MatPool.Icon_Construct,
-                    action = delegate
-                    {
-                        Log.Message("ACTION 2");
-                        isConstructing = true;
-                        sendNanitesConstruct();
-                      
-                    }
-                };
-                gizmoList.Add(item2);
-
-
-                Command_Action item3 = new Command_Action
-                {
-                    defaultLabel = SPT_Labels.repair_label,
-                    defaultDesc = SPT_Labels.repair_desc,
-                    order = 70,
-                    icon = SPT_MatPool.Icon_Repair,
-                    action = delegate
-                    {
-                        Log.Message("ACTION 3");
-                        isRepairing = true;
-                        sendNanitesRepair();
-                      
-                    }
-                };
-                gizmoList.Add(item3);
-
-                Command_Action item4 = new Command_Action
-                {
-                    defaultLabel = SPT_Labels.heal_label,
-                    defaultDesc = SPT_Labels.heal_desc,
-                    order = 71,
-                    icon = SPT_MatPool.Icon_Heal,
-                    action = delegate
-                    {
-                        Log.Message("ACTION 4");
-                        isHealing = true;
-                        sendNanitesHeal();
-                       
-                    }
-                };
-                gizmoList.Add(item4);
 
             }
             return gizmoList;
@@ -727,12 +796,7 @@ namespace NaniteFactory
                      
                         if (ePath.Count > 0)
                         {
-                            //Replacing 'test' functionality with actual delivery and tracking
-                            //for (int i = 0; i < ePath.Count; i++)
-                            //{                    
-                            //    MoteMaker.ThrowHeatGlow(ePath[i], this.Map, 1f);
-                            //}
-                            //RepairJobs.Add(targetThing);
+                            //Delivery And Tracking                    
                             if(SPT_DefOf.SPT_NaniteWirelessAdaptation.IsFinished)
                             {
                                 //Do wireless delivery method...
@@ -797,7 +861,7 @@ namespace NaniteFactory
                 };
                 Thing launcher = this;
                 SPT_FlyingObject flyingObject = (SPT_FlyingObject)GenSpawn.Spawn(SPT_DefOf.SPT_FlyingObject, this.Position, this.Map);  //replace this.Position with this.interactionCell (Building)
-                flyingObject.ExactLaunch(null, 0, false, path, launcher, path[0], t, launchedThing, 50, 0);
+                flyingObject.ExactLaunch(null, 0, false, path, launcher, path[0], t, launchedThing, 20, 0);
                 //LongEventHandler.QueueLongEvent(delegate
                 //{
                     
@@ -815,6 +879,11 @@ namespace NaniteFactory
                 return Building_NaniteFactory.ResourceCellsAround(base.Position, base.Map);
             }
         }
+
+        public bool UseFixedDeconstruction { get; private set; }
+        public bool UseFixedConstruction { get; private set; }
+        public bool UseFixedRepairing { get; private set; }
+        public bool UseFixedHealing { get; private set; }
 
         private void MakeMatchingStockpile()
         {

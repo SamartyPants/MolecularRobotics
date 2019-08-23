@@ -333,3 +333,5 @@ ASALocalRun/
 /Assemblies/NVorbis.dll
 /Assemblies/NAudio.dll
 /Assemblies/Assembly-CSharp-firstpass.dll
+/Assemblies/Assembly-CSharp.dll
+/Assemblies/UnityEngine.dll
