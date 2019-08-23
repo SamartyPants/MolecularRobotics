@@ -5,6 +5,7 @@ using System.Text;
 using RimWorld;
 using UnityEngine;
 using Verse;
+using Verse.Sound;
 
 namespace NaniteFactory
 {
@@ -40,15 +41,16 @@ namespace NaniteFactory
         //Increasing intervals will reduce processor demand but slow down responsiveness
         //Intervals are offset to limit the amount of processor demand during active ticks
         private int repairInterval = 11;
-        private int constructInterval = 125;
-        private int deconstructInterval = 25;
-        private int healInterval = 25;
+        private int repairSearchInterval = 300;
 
-        //Indicators which task the factory is currently working on
-        private bool isRepairing = false;
-        private bool isConstructing = false;
-        private bool isDeconstructing = false;
-        private bool isHealing = false;
+        private int constructInterval = 125;
+        private int constructSearchInterval = 350;
+
+        private int deconstructInterval = 25;
+        private int deconstructSearchInterval = 45;
+
+        private int healInterval = 25;
+        private int healSearchInterval = 61;        
 
         //Current Job for Coloring
         private Thing currentThingJob;
@@ -63,7 +65,35 @@ namespace NaniteFactory
         private int deconstructSkill = 1;
         private float healSkill = .1F;
 
-
+        //Indicators for task the factory is currently working on
+        public bool isRepairing
+        {
+            get
+            {
+                return this.RepairJobs.Count > 0;
+            }
+        }
+        public bool isConstructing
+        {
+            get
+            {
+                return this.ConstructJobs.Count > 0;
+            }
+        }
+        public bool isDeconstructing
+        {
+            get
+            {
+                return this.DeconstructJobs.Count > 0;
+            }
+        }
+        public bool isHealing
+        {
+            get
+            {
+                return this.HealJobs.Count > 0;
+            }
+        }
         //Saved Variables - built-in QC during call; use CAP variable whenever possible
         //Repair requires -> ResearchProjectDef.Named("SPT_NaniteReconstitutionProtocols").IsFinished)
         private List<Thing> repairJobs = new List<Thing>();
@@ -138,7 +168,7 @@ namespace NaniteFactory
                 constructJobs = value;
             }
         }
-
+        
         //Healing requires -> ResearchProjectDef.Named("SPT_NaniteMendingProtocols").IsFinished)
         private List<Pawn> healJobs = new List<Pawn>();
         public List<Pawn> HealJobs
@@ -266,7 +296,7 @@ namespace NaniteFactory
                     if (currentThingJob is Building)
                     {
                         Building b = currentThingJob as Building;
-                        size = b.def.Size.Magnitude;
+                        size = b.def.Size.x * b.def.Size.z;
                     }
                     rndVec.x += (Rand.Range(-size, size));
                     rndVec.z += (Rand.Range(-size, size));
@@ -284,7 +314,7 @@ namespace NaniteFactory
                     rndVec.x += (Rand.Range(-.3f, .3f));
                     rndVec.z += (Rand.Range(-.3f, .3f));
                     SPT_Utility.ThrowGenericMote(SPT_DefOf.SPT_Mote_NaniteConstructing, rndVec, currentFrameJob.Map, Rand.Range(.02f, .2f), .1f, .3f, .3f, Rand.Range(-300, 300), 0, 0, Rand.Range(0, 360));
-
+                    
                 }
 
             }
@@ -314,37 +344,48 @@ namespace NaniteFactory
             }
 
             //Offset execution of each function based on game tick
-            if (Find.TickManager.TicksGame % this.repairInterval == 0)
+            if ((this.UseFixedConstruction && this.UseFixedDeconstruction && this.UseFixedHealing) != true && this.UseFixedRepairing == true)
             {
-                if((this.UseFixedConstruction && this.UseFixedDeconstruction && this.UseFixedHealing) != true && this.UseFixedRepairing == true)
-                {
-                    sendNanitesRepair();
+                if (Find.TickManager.TicksGame % this.repairInterval == 0)
+                {                                    
                     DoRepairJobs();
                 }
-              
-            }
-            if (Find.TickManager.TicksGame % this.constructInterval == 0)
-            {
-                if ((this.UseFixedRepairing && this.UseFixedDeconstruction && this.UseFixedHealing) != true && this.UseFixedConstruction == true)
+                if (Find.TickManager.TicksGame % this.repairSearchInterval == 0)
                 {
-                    sendNanitesConstruct();
+                    sendNanitesRepair();
+                }
+            }
+            if ((this.UseFixedRepairing && this.UseFixedDeconstruction && this.UseFixedHealing) != true && this.UseFixedConstruction == true)
+            {
+                if (Find.TickManager.TicksGame % this.constructInterval == 0)
+                {               
                     DoConstructJobs();
                 }
-            }
-            if (Find.TickManager.TicksGame % this.deconstructInterval == 0)
-            {
-                if ((this.UseFixedConstruction && this.UseFixedRepairing && this.UseFixedHealing) != true && this.UseFixedDeconstruction == true)
+                if(Find.TickManager.TicksGame % this.constructSearchInterval == 0)
                 {
-                    sendNanitesDeconstruct();
-                    DoDeconstructJobs();
+                    sendNanitesConstruct();
                 }
             }
-            if (Find.TickManager.TicksGame % this.healInterval == 0)
+            if ((this.UseFixedConstruction && this.UseFixedRepairing && this.UseFixedHealing) != true && this.UseFixedDeconstruction == true)
             {
-                if ((this.UseFixedConstruction && this.UseFixedDeconstruction && this.UseFixedRepairing) != true && this.UseFixedHealing == true)
+                if (Find.TickManager.TicksGame % this.deconstructInterval == 0)
+                {                
+                    DoDeconstructJobs();
+                }
+                if(Find.TickManager.TicksGame % this.deconstructSearchInterval == 0)
+                {
+                    sendNanitesDeconstruct();
+                }
+            }
+            if ((this.UseFixedConstruction && this.UseFixedDeconstruction && this.UseFixedRepairing) != true && this.UseFixedHealing == true)
+            {
+                if (Find.TickManager.TicksGame % this.healInterval == 0)
+                {               
+                    DoHealJobs();
+                }
+                if(Find.TickManager.TicksGame % this.healSearchInterval == 0)
                 {
                     sendNanitesHeal();
-                    DoHealJobs();
                 }
             }
         }
@@ -368,16 +409,29 @@ namespace NaniteFactory
                         jobThing.HitPoints = Mathf.Clamp(jobThing.HitPoints += this.repairSkill, 0, jobThing.MaxHitPoints);
 
                         //Draw Visual On thing (Red sparkles temporary)
+                        //Vector3 rndVec = jobThing.DrawPos;
+                        //rndVec.x += (Rand.Range(-.3f, .3f));
+                        //rndVec.z += (Rand.Range(-.3f, .3f));
+                        //SPT_Utility.ThrowGenericMote(SPT_DefOf.SPT_Mote_NaniteRepairing, rndVec, jobThing.Map, Rand.Range(.02f, .2f), .1f, .3f, .3f, Rand.Range(-300,300), 0, 0, Rand.Range(0, 360));
+
                         Vector3 rndVec = jobThing.DrawPos;
-                        rndVec.x += (Rand.Range(-.3f, .3f));
-                        rndVec.z += (Rand.Range(-.3f, .3f));
-                        SPT_Utility.ThrowGenericMote(SPT_DefOf.SPT_Mote_NaniteRepairing, rndVec, jobThing.Map, Rand.Range(.02f, .2f), .1f, .3f, .3f, Rand.Range(-300,300), 0, 0, Rand.Range(0, 360));
+                        float sizeX = .3f;
+                        float sizeZ = .3f;
+                        //test expanding area of motes based on building size...
+                        if (jobThing is Building)
+                        {
+                            Building b = jobThing as Building;
+                            sizeX = b.def.size.x * .4f;
+                            sizeZ = b.def.size.z * .4f;
+                        }
+                        rndVec.x += (Rand.Range(-sizeX, sizeX));
+                        rndVec.z += (Rand.Range(-sizeZ, sizeZ));
+                        SPT_Utility.ThrowGenericMote(SPT_DefOf.SPT_Mote_NaniteRepairing, rndVec, jobThing.Map, Rand.Range(.05f, .4f), .1f, .3f, .3f, Rand.Range(-300, 300), 0, 0, Rand.Range(0, 360));
 
                         //Once thing is max health, remove thing from job list
-                        if(jobThing.HitPoints == jobThing.MaxHitPoints)
+                        if (jobThing.HitPoints == jobThing.MaxHitPoints)
                         {
                             RepairJobs.Remove(tmpJobs[i]);
-                            isRepairing = false;
                         }
                     }
                 }
@@ -415,7 +469,6 @@ namespace NaniteFactory
                             {
                                 jobThing.CompleteConstruction(this.Map.mapPawns.AllPawnsSpawned.RandomElement() as Pawn);
                                 ConstructJobs.Remove(tmpJobs[i]);
-                                isConstructing = false;
                             }
                         }
                     }
@@ -447,8 +500,7 @@ namespace NaniteFactory
                             rndVec.z += (Rand.Range(-.3f, .3f));
                             SPT_Utility.ThrowGenericMote(SPT_DefOf.SPT_Mote_NaniteWorking, rndVec, jobThing.Map, Rand.Range(.02f, .2f), .1f, .3f, .3f, Rand.Range(-300, 300), 0, 0, Rand.Range(0, 360));
 
-                            DeconstructJobs.Remove(tmpJobs[i]);
-                            isDeconstructing = false;       
+                            DeconstructJobs.Remove(tmpJobs[i]);      
                     }
                 }
             }
@@ -469,7 +521,6 @@ namespace NaniteFactory
                     //if that thing is not null (error checking)
                     if (jobPawn != null)
                     {               
-                       
                         //Looping through this again ( i know we defined a function for this in Utility, however I want the nanites to be able to focus 1 body part at a time
                         using (IEnumerator<BodyPartRecord> enumerator = jobPawn.health.hediffSet.GetInjuredParts().GetEnumerator())
                         {
@@ -535,7 +586,6 @@ namespace NaniteFactory
                         {
                            
                             HealJobs.Remove(jobPawn);
-                            isHealing = false;
                         }
 
                     }
@@ -783,12 +833,13 @@ namespace NaniteFactory
         }
         private void sendNanitesRepair()
         {
-            List<Thing> repairableBuildings = SPT_Utility.FindRepairBuildings(this.Map, this.Faction);
+            List<Thing> repairableBuildings = SPT_Utility.FindRepairBuildings(this.Map, this.Faction, RepairJobs);           
+            
             if(repairableBuildings != null)
             {
                 if(repairableBuildings.Count > 0)
-                {                  
-                    Thing targetThing = repairableBuildings.Except(RepairJobs).RandomElement();
+                {
+                    Thing targetThing = repairableBuildings.RandomElement();
                     if (targetThing != null)
                     {
                         //Need to check if the "Wireless" research is researched
@@ -800,11 +851,12 @@ namespace NaniteFactory
                             if(SPT_DefOf.SPT_NaniteWirelessAdaptation.IsFinished)
                             {
                                 //Do wireless delivery method...
+                                NaniteDelivery_Wireless(targetThing, NaniteDispersal.ExplosionMist, NaniteActions.Repair);
                             }
                             else
                             {
                                 //Do wired delivery method
-                                NaniteDelivery_Wired(targetThing, SPT_Utility.IntVec3List_To_Vector3List(ePath));
+                                NaniteDelivery_Wired(targetThing, SPT_Utility.IntVec3List_To_Vector3List(ePath), NaniteDispersal.Spray, NaniteActions.Repair);
                             }
                         }
                         else
@@ -849,7 +901,7 @@ namespace NaniteFactory
             }
         }
 
-        public void NaniteDelivery_Wired(LocalTargetInfo target, List<Vector3> path)
+        public void NaniteDelivery_Wired(LocalTargetInfo target, List<Vector3> path, NaniteDispersal dispersal, NaniteActions action)
         {
             LocalTargetInfo t = target;
             bool flag = t.Cell != default(IntVec3);
@@ -860,8 +912,8 @@ namespace NaniteFactory
                     def = SPT_DefOf.SPT_FlyingObject
                 };
                 Thing launcher = this;
-                SPT_FlyingObject flyingObject = (SPT_FlyingObject)GenSpawn.Spawn(SPT_DefOf.SPT_FlyingObject, this.Position, this.Map);  //replace this.Position with this.interactionCell (Building)
-                flyingObject.ExactLaunch(null, 0, false, path, launcher, path[0], t, launchedThing, 20, 0);
+                SPT_FlyingObject flyingObject = (SPT_FlyingObject)GenSpawn.Spawn(SPT_DefOf.SPT_FlyingObject, this.Position, this.Map); 
+                flyingObject.ExactLaunch(null, 0, false, path, launcher, path[0], t, launchedThing, 40, 0, dispersal, action);
                 //LongEventHandler.QueueLongEvent(delegate
                 //{
                     
@@ -869,6 +921,31 @@ namespace NaniteFactory
             }
         }
 
+        public void NaniteDelivery_Wireless(LocalTargetInfo target, NaniteDispersal dispersal, NaniteActions action)
+        {
+            SoundInfo info = SoundInfo.InMap(new TargetInfo(target.Cell, this.Map, false), MaintenanceType.None);
+            info.pitchFactor = 1.3f;
+            info.volumeFactor = .6f;
+            SPT_DefOf.Mortar_LaunchA.PlayOneShot(info);
+            LocalTargetInfo t = target;
+            bool flag = t.Cell != default(IntVec3);
+            if (flag)
+            {
+                Thing launchedThing = new Thing()
+                {
+                    def = SPT_DefOf.SPT_FlyingObject
+                };
+                Thing launcher = this;
+                SPT_FlyingObject flyingObject = (SPT_FlyingObject)GenSpawn.Spawn(SPT_DefOf.SPT_FlyingObject, this.Position, this.Map);
+                //larger curve means larger loop, 90 curve would initially launch at a 90deg angle to the direction of the target
+                //provide a mote and mote frequency to have additional effects while in flight
+                flyingObject.AdvancedLaunch(this, null, 0, Rand.Range(40, 60), true, this.DrawPos, t, launchedThing, 40, false, 0, 2, dispersal, action, null, null);  
+                //LongEventHandler.QueueLongEvent(delegate
+                //{
+
+                //}, "LaunchingFlyer", false, null);
+            }
+        }
 
 
         //Create resource stockpile

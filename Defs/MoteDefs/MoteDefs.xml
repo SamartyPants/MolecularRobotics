@@ -50,4 +50,20 @@
     </mote>
   </ThingDef>
   
+    <ThingDef ParentName="MoteBase">
+    <defName>SPT_Mote_NanitesAir</defName>
+    <graphicData>
+      <texPath>Motes/Mote_NanitesAir</texPath>
+	  <shaderType>MoteGlow</shaderType>
+	  <color>(1,.2,.2)</color>
+    </graphicData>
+    <altitudeLayer>MoteOverhead</altitudeLayer>
+    <mote>
+      <fadeInTime>0.05</fadeInTime>
+      <solidTime>0.2</solidTime>
+      <fadeOutTime>0.5</fadeOutTime>
+    </mote>
+  </ThingDef>
+  
+  
 </Defs>
