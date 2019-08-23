@@ -183,12 +183,13 @@ namespace NaniteFactory
                 {
                     if (!pathFinder[j].ended)
                     {
+                        //List<IntVec3> cellList = GenCrossSection(pathFinder[j].currentCell, true); 
                         List<IntVec3> cellList = GenRadial.RadialCellsAround(pathFinder[j].currentCell, 1f, true).ToList();
                         List<IntVec3> validCells = new List<IntVec3>();
                         validCells.Clear();
                         for (int k = 0; k < cellList.Count; k++)
                         {
-                            if (!allCells.Contains(cellList[k]) && CellHasConduit(cellList[k], map) && cellList[k].GetFirstBuilding(map) != from)
+                            if (!allCells.Contains(cellList[k]) && CellHasConduit(cellList[k], map))// && cellList[k].GetFirstBuilding(map) != from)
                             {
                                 allCells.Add(cellList[k]);
                                 validCells.Add(cellList[k]);
@@ -250,7 +251,7 @@ namespace NaniteFactory
             //First evaluated path always uses full list
             //Following paths can be branched; eliminate excess cells from those lists 
             //by recording when the valid path branches
-            List<IntVec3> tracebackList = new List<IntVec3>();
+            List<IntVec3> tracebackList = new List<IntVec3>();            
             
             tracebackList.Clear();
             
@@ -269,6 +270,7 @@ namespace NaniteFactory
                         //construct the reverse path
                         //tracebackList.Add(pathFinder[index].pathList[i]);
                         tmpTrace.Add(pathFinder[index].pathList[i]);
+                        
                         //Log.Message("index " + index + " path " + pathFinder[index].pathList[i]);
                     }
                 }
@@ -282,16 +284,17 @@ namespace NaniteFactory
                 {
                     //construct valid reverse path from point path branches from parent
                     tmpTrace.Reverse();
-                    for (int i = 0; i < tmpTrace.Count; i++)
-                    {
-                        Log.Message("" + tmpTrace[i]);
-                    }
+                    //for (int i = 0; i < tmpTrace.Count; i++)
+                    //{
+                    //    Log.Message("" + tmpTrace[i]);
+                    //}
                     tracebackList.AddRange(tmpTrace);
                     parentIndexCount = pathFinder[index].pathParentSplitIndex;
                     index = pathFinder[index].pathParent;
                 }
             }
             tracebackList.Reverse();
+            tracebackList = SnipPath(tracebackList);
             return tracebackList;
         }
 
@@ -308,6 +311,51 @@ namespace NaniteFactory
                 }
             }
             return hasConduit;
+        }
+
+        public static List<IntVec3> GenCrossSection(IntVec3 center, bool useCenter)
+        {
+            List<IntVec3> tmpCells = new List<IntVec3>();
+            tmpCells.Clear();
+            if (useCenter)
+            {
+                tmpCells.Add(center);
+            }
+            tmpCells.Add(new IntVec3(center.x + 1, 0, center.z));
+            tmpCells.Add(new IntVec3(center.x - 1, 0, center.z));
+            tmpCells.Add(new IntVec3(center.x, 0, center.z + 1));
+            tmpCells.Add(new IntVec3(center.x, 0, center.z - 1));
+
+            return tmpCells;
+        }
+
+        public static List<IntVec3> SnipPath(List<IntVec3> tracebackList)
+        {
+            IntVec3 last1Cell = default(IntVec3);
+            IntVec3 last2Cell = default(IntVec3);
+            for (int i = 0; i < tracebackList.Count; i++)
+            {
+                if (i > 0)
+                {
+                    last1Cell = tracebackList[i - 1];
+                    if (i > 1)
+                    {
+                        last2Cell = tracebackList[i - 2];
+                    }
+                }
+
+                if (last1Cell != default(IntVec3) && last2Cell != default(IntVec3))
+                {
+                    if ((last2Cell - tracebackList[i]).LengthHorizontal <= (last1Cell - tracebackList[i]).LengthHorizontal)
+                    {
+                        tracebackList.Remove(last1Cell);
+                    }
+                }
+                last1Cell = default(IntVec3);
+                last2Cell = default(IntVec3);
+            }
+
+            return tracebackList;
         }
 
     }
