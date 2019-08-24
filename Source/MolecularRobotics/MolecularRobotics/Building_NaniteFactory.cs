@@ -852,7 +852,7 @@ namespace NaniteFactory
                         }
                         else
                         {
-                            List<IntVec3> ePath = SPT_Utility.FindElectricPath(this, targetThing, this.InteractionCell);
+                            List<IntVec3> ePath = SPT_Utility.FindElectricPath(this, targetThing);
 
                             if (ePath.Count > 0)
                             {

@@ -164,7 +164,7 @@ namespace NaniteFactory
             return injurySeverity > minInjurySeverity;
         }
 
-        public static List<IntVec3> FindElectricPath(Thing from, Thing to, IntVec3 startPos)
+        public static List<IntVec3> FindElectricPath(Thing from, Thing to)
         {
             //use a structure to record path parameters
             //look for any transmitter nearby 
@@ -182,8 +182,8 @@ namespace NaniteFactory
             allCells.Clear();
             pathFinder.Clear();
 
-            startList.Add(startPos);
-            pathFinder.Add(new EPath(0, 0, false, startPos, startList));
+            startList.Add(from.Position);
+            pathFinder.Add(new EPath(0, 0, false, from.Position, startList));
 
             bool pathFound = false;
             int bestPathIndex = 0;
