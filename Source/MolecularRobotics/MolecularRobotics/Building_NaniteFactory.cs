@@ -886,27 +886,28 @@ namespace NaniteFactory
                     if (targetThing != null)
                     {
                         //Need to check if the "Wireless" research is researched
-                        List<IntVec3> ePath = SPT_Utility.FindElectricPath(this, targetThing, this.InteractionCell);
-                     
-                        if (ePath.Count > 0)
+
+                        //Delivery And Tracking                    
+                        if (SPT_DefOf.SPT_NaniteWirelessAdaptation.IsFinished)
                         {
-                            //Delivery And Tracking                    
-                            if(SPT_DefOf.SPT_NaniteWirelessAdaptation.IsFinished)
-                            {
-                                //Do wireless delivery method...
-                                NaniteDelivery_Wireless(targetThing, NaniteDispersal.ExplosionMist, NaniteActions.Repair);
-                            }
-                            else
+                            //Do wireless delivery method...
+                            NaniteDelivery_Wireless(targetThing, NaniteDispersal.ExplosionMist, NaniteActions.Repair);
+                        }
+                        else
+                        {
+                            List<IntVec3> ePath = SPT_Utility.FindElectricPath(this, targetThing);
+
+                            if (ePath.Count > 0)
                             {
                                 //Do wired delivery method
                                 NaniteDelivery_Wired(targetThing, SPT_Utility.IntVec3List_To_Vector3List(ePath), NaniteDispersal.Spray, NaniteActions.Repair);
                             }
+                            else
+                            {
+                                Log.Message("no path found");
+                            }
                         }
-                        else
-                        {
-                            Log.Message("no path found");
-                        }
-                       
+
                     }
                     else
                     {
