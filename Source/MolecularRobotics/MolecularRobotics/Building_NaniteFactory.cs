@@ -633,31 +633,73 @@ namespace NaniteFactory
             {
                 //Deconstruction
                 case 1:
-                    this.UseFixedDeconstruction = true;
-                    this.UseFixedConstruction = false;
-                    this.UseFixedHealing = false;
-                    this.UseFixedRepairing = false;
+                    if(this.UseFixedDeconstruction == true)
+                    {
+                        this.UseFixedDeconstruction = false;
+                        this.UseFixedConstruction = false;
+                        this.UseFixedHealing = false;
+                        this.UseFixedRepairing = false;
+                    }
+                    else
+                    {
+                        this.UseFixedDeconstruction = true;
+                        this.UseFixedConstruction = false;
+                        this.UseFixedHealing = false;
+                        this.UseFixedRepairing = false;
+                    }
+                 
                     break;
                 //Construction
                 case 2:
-                    this.UseFixedDeconstruction = false;
-                    this.UseFixedConstruction = true;
-                    this.UseFixedHealing = false;
-                    this.UseFixedRepairing = false;
+                    if (this.UseFixedConstruction == true)
+                    {
+                        this.UseFixedDeconstruction = false;
+                        this.UseFixedConstruction = false;
+                        this.UseFixedHealing = false;
+                        this.UseFixedRepairing = false;
+                    }
+                    else
+                    {
+                        this.UseFixedDeconstruction = false;
+                        this.UseFixedConstruction = true;
+                        this.UseFixedHealing = false;
+                        this.UseFixedRepairing = false;
+                    }            
                     break;
                 //healing
                 case 3:
-                    this.UseFixedDeconstruction = false;
-                    this.UseFixedConstruction = false;
-                    this.UseFixedHealing = true;
-                    this.UseFixedRepairing = false;
+                    if (this.UseFixedHealing == true)
+                    {
+                        this.UseFixedDeconstruction = false;
+                        this.UseFixedConstruction = false;
+                        this.UseFixedHealing = false;
+                        this.UseFixedRepairing = false;
+                    }
+                    else
+                    {
+                        this.UseFixedDeconstruction = false;
+                        this.UseFixedConstruction = false;
+                        this.UseFixedHealing = true;
+                        this.UseFixedRepairing = false;
+                    }
+                    
                     break;
                 //repairing
                 case 4:
-                    this.UseFixedDeconstruction = false;
-                    this.UseFixedConstruction = false;
-                    this.UseFixedHealing = false;
-                    this.UseFixedRepairing = true;
+                    if (this.UseFixedRepairing == true)
+                    {
+                        this.UseFixedDeconstruction = false;
+                        this.UseFixedConstruction = false;
+                        this.UseFixedHealing = false;
+                        this.UseFixedRepairing = false;
+                    }
+                    else
+                    {
+                        this.UseFixedDeconstruction = false;
+                        this.UseFixedConstruction = false;
+                        this.UseFixedHealing = false;
+                        this.UseFixedRepairing = true;
+                    }                  
                     break;
                 default:
                     //Something went wrong...
@@ -765,9 +807,10 @@ namespace NaniteFactory
                         action = new Action(this.MakeMatchingStockpile),
                         hotKey = KeyBindingDefOf.Misc3,
                         order = 50,
+                        defaultLabel = SPT_Labels.stockpile_label,
                         defaultDesc = SPT_Labels.stockpile_desc,
                         icon = ContentFinder<Texture2D>.Get("UI/Designators/ZoneCreate_Stockpile", true),
-                        defaultLabel = SPT_Labels.stockpile_label
+                        
                     };
                     gizmoList.Add(item0);
                 }
