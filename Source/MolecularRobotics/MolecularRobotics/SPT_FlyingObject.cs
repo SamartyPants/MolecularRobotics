@@ -9,7 +9,7 @@ namespace NaniteFactory
 {
     [StaticConstructorOnStartup]
     public class SPT_FlyingObject : ThingWithComps
-    {        
+    {
 
         protected Vector3 origin;
         protected Vector3 destination;
@@ -25,9 +25,10 @@ namespace NaniteFactory
         public ThingDef moteDef = null;
         public int moteFrequency = 0;
 
-        public bool spinning = false;        
+        public bool spinning = false;
         public float curveVariance = 0; // 0 = no curve, straight flight
         private List<Vector3> curvePoints = new List<Vector3>();
+        private List<IntVec3> impactCells = new List<IntVec3>();
         public float force = 1f;
         private int destinationCurvePoint = 0;
         private float impactRadius = 0;
@@ -36,6 +37,10 @@ namespace NaniteFactory
         private DamageDef impactDamageType = null;
         private bool flyOverhead = false;
         private NaniteDispersal dispersalMethod = NaniteDispersal.Invisible;
+        private NaniteActions naniteAction;
+        private bool impacted = false;
+        private int ticksFollowingImpact = 120;
+        private Vector3 sprayVec = default(Vector3);
 
         private bool earlyImpact = false;
         private float impactForce = 0;
@@ -103,6 +108,9 @@ namespace NaniteFactory
             Scribe_Values.Look<int>(ref this.ticksToImpact, "ticksToImpact", 0, false);
             Scribe_Values.Look<bool>(ref this.damageLaunched, "damageLaunched", true, false);
             Scribe_Values.Look<bool>(ref this.explosion, "explosion", false, false);
+            Scribe_Values.Look<bool>(ref this.impacted, "impacted", false, false);
+            Scribe_Values.Look<NaniteActions>(ref this.naniteAction, "naniteAction", NaniteActions.Repair, false);
+            Scribe_Values.Look<NaniteDispersal>(ref this.dispersalMethod, "dispersalMethod", NaniteDispersal.Invisible, false);
             Scribe_References.Look<Thing>(ref this.assignedTarget, "assignedTarget", false);
             Scribe_References.Look<Thing>(ref this.launcher, "launcher", false);
             Scribe_Deep.Look<Thing>(ref this.flyingThing, "flyingThing", new object[0]);
@@ -132,8 +140,10 @@ namespace NaniteFactory
             this.Launch(launcher, base.Position.ToVector3Shifted(), targ, flyingThing, null);
         }
 
-        public void AdvancedLaunch(Thing launcher, ThingDef effectMote, int moteFrequencyTicks, float curveAmount, bool shouldSpin, Vector3 origin, LocalTargetInfo targ, Thing flyingThing, int flyingSpeed, bool isExplosion, int _impactDamage, float _impactRadius, DamageDef damageType, DamageInfo? newDamageInfo = null)
+        public void AdvancedLaunch(Thing launcher, ThingDef effectMote, int moteFrequencyTicks, float curveAmount, bool shouldSpin, Vector3 origin, LocalTargetInfo targ, Thing flyingThing, int flyingSpeed, bool isExplosion, int _impactDamage, float _impactRadius, NaniteDispersal dispersal, NaniteActions action, DamageDef damageType, DamageInfo? newDamageInfo = null)
         {
+            this.naniteAction = action;
+            this.dispersalMethod = dispersal;
             this.explosionDamage = _impactDamage;
             this.isExplosive = isExplosion;
             this.impactRadius = _impactRadius;
@@ -148,8 +158,10 @@ namespace NaniteFactory
             this.Launch(launcher, origin, targ, flyingThing, newDamageInfo);
         }
 
-        public void ExactLaunch(ThingDef effectMote, int moteFrequencyTicks, bool shouldSpin, List<Vector3> travelPath, Thing launcher, Vector3 origin, LocalTargetInfo targ, Thing flyingThing, int flyingSpeed, float _impactRadius)
+        public void ExactLaunch(ThingDef effectMote, int moteFrequencyTicks, bool shouldSpin, List<Vector3> travelPath, Thing launcher, Vector3 origin, LocalTargetInfo targ, Thing flyingThing, int flyingSpeed, float _impactRadius, NaniteDispersal dispersal, NaniteActions action)
         {
+            this.naniteAction = action;
+            this.dispersalMethod = dispersal;
             this.moteFrequency = moteFrequencyTicks;
             this.moteDef = effectMote;
             this.impactRadius = _impactRadius;
@@ -162,7 +174,7 @@ namespace NaniteFactory
 
         public void Launch(Thing launcher, Vector3 origin, LocalTargetInfo targ, Thing flyingThing, DamageInfo? newDamageInfo = null)
         {
-            Log.Message("launching object");
+            //Log.Message("launching object");
             bool spawned = flyingThing.Spawned;
             this.pawn = launcher as Pawn;
             if (spawned)
@@ -187,7 +199,7 @@ namespace NaniteFactory
                 this.destinationCurvePoint++;
                 this.destination = this.curvePoints[this.destinationCurvePoint];
             }
-            else if(this.curveVariance > 0 && this.curvePoints.Count > 0)
+            else if (this.curveVariance > 0 && this.curvePoints.Count > 0)
             {
                 this.destinationCurvePoint++;
                 this.destination = this.curvePoints[this.destinationCurvePoint];
@@ -233,44 +245,56 @@ namespace NaniteFactory
         public override void Tick()
         {
             base.Tick();
-            Vector3 exactPosition = this.ExactPosition;
-            if (this.ticksToImpact >= 0 && this.moteDef != null && Find.TickManager.TicksGame % this.moteFrequency == 0)
+            if (!this.impacted)
             {
-                DrawEffects(exactPosition);
-            }
-            this.ticksToImpact--;
-            bool flag = !this.ExactPosition.InBounds(base.Map);
-            if (flag)
-            {
-                this.ticksToImpact++;
-                base.Position = this.ExactPosition.ToIntVec3();
-                this.Destroy(DestroyMode.Vanish);
-            }
-            else if (!this.ExactPosition.ToIntVec3().Walkable(base.Map))
-            {
-                this.earlyImpact = true;
-                this.impactForce = (this.DestinationCell - this.ExactPosition.ToIntVec3()).LengthHorizontal + (this.speed * .2f);
-                this.ImpactSomething();
-            }
-            else
-            {
-                base.Position = this.ExactPosition.ToIntVec3();
-                //if (Find.TickManager.TicksGame % 3 == 0)
-                //{
-                //    MoteMaker.ThrowDustPuff(base.Position, base.Map, Rand.Range(0.6f, .8f));
-                //}
-
-                bool flag2 = this.ticksToImpact <= 0;
-                if (flag2)
+                Vector3 exactPosition = this.ExactPosition;
+                if (this.ticksToImpact >= 0 && this.moteDef != null && Find.TickManager.TicksGame % this.moteFrequency == 0)
                 {
-                    if (this.curveVariance > 0)
+                    DrawEffects(exactPosition);
+                }
+                this.ticksToImpact--;
+                bool flag = !this.ExactPosition.InBounds(base.Map);
+                if (flag)
+                {
+                    this.ticksToImpact++;
+                    base.Position = this.ExactPosition.ToIntVec3();
+                    this.Destroy(DestroyMode.Vanish);
+                }
+                else if (this.dispersalMethod == NaniteDispersal.Spray && !this.ExactPosition.ToIntVec3().GetTransmitter(this.Map).TransmitsPowerNow)
+                {
+                    this.earlyImpact = true;
+                    this.impactForce = (this.DestinationCell - this.ExactPosition.ToIntVec3()).LengthHorizontal + (this.speed * .2f);
+                    this.ImpactSomething();
+                }
+                else
+                {
+                    base.Position = this.ExactPosition.ToIntVec3();
+                    //if (Find.TickManager.TicksGame % 3 == 0)
+                    //{
+                    //    MoteMaker.ThrowDustPuff(base.Position, base.Map, Rand.Range(0.6f, .8f));
+                    //}
+
+                    bool flag2 = this.ticksToImpact <= 0;
+                    if (flag2)
                     {
-                        if ((this.curvePoints.Count() - 1) > this.destinationCurvePoint)
+                        if (this.curveVariance > 0)
                         {
-                            this.origin = curvePoints[destinationCurvePoint];
-                            this.destinationCurvePoint++;
-                            this.destination = this.curvePoints[this.destinationCurvePoint];
-                            this.ticksToImpact = this.StartingTicksToImpact;
+                            if ((this.curvePoints.Count() - 1) > this.destinationCurvePoint)
+                            {
+                                this.origin = curvePoints[destinationCurvePoint];
+                                this.destinationCurvePoint++;
+                                this.destination = this.curvePoints[this.destinationCurvePoint];
+                                this.ticksToImpact = this.StartingTicksToImpact;
+                            }
+                            else
+                            {
+                                bool flag3 = this.DestinationCell.InBounds(base.Map);
+                                if (flag3)
+                                {
+                                    base.Position = this.DestinationCell;
+                                }
+                                this.ImpactSomething();
+                            }
                         }
                         else
                         {
@@ -282,47 +306,66 @@ namespace NaniteFactory
                             this.ImpactSomething();
                         }
                     }
-                    else
+                }
+            }
+
+            if (this.impacted)
+            {
+                if (this.ticksFollowingImpact > 0 && Find.TickManager.TicksGame % 2 == 0 && this.dispersalMethod == NaniteDispersal.Spray)
+                {
+                    //Spray nanites
+                    SPT_Utility.ThrowGenericMote(SPT_DefOf.SPT_Mote_NanitesAir, this.ExactPosition, this.launcher.Map, Rand.Range(.8f, 1.2f), .3f, .01f, .3f, Rand.Range(-100, 100), 5, (Quaternion.AngleAxis(Rand.Range(80, 100), Vector3.up) * sprayVec).ToAngleFlat(), Rand.Range(0, 360));
+                }
+
+                if(this.ticksFollowingImpact > 0 && this.dispersalMethod == NaniteDispersal.ExplosionMist && this.impactRadius > 0 && Find.TickManager.TicksGame % 3 == 0)
+                {
+                    for(int i =0; i < impactCells.Count; i++)
                     {
-                        bool flag3 = this.DestinationCell.InBounds(base.Map);
-                        if (flag3)
-                        {
-                            base.Position = this.DestinationCell;
-                        }
-                        this.ImpactSomething();
+                        //Spray nanites
+                        SPT_Utility.ThrowGenericMote(SPT_DefOf.SPT_Mote_NanitesAir, impactCells[i].ToVector3Shifted(), this.launcher.Map, Rand.Range(1.5f, 2f), .5f, .01f, Rand.Range(.5f,1), Rand.Range(-500, 500), Rand.Range(2,5), (Quaternion.AngleAxis(Rand.Range(80, 100), Vector3.up) * sprayVec).ToAngleFlat(), Rand.Range(0, 360));
                     }
+                }
+
+                this.ticksFollowingImpact--;
+
+                if (this.ticksFollowingImpact < 0)
+                {
+                    this.Destroy(DestroyMode.Vanish);
                 }
             }
         }
 
         public override void Draw()
         {
-            bool flag = this.flyingThing != null;
-            if (flag)
+            if (!this.impacted)
             {
-                bool flag2 = this.flyingThing is Pawn;
-                if (flag2)
+                bool flag = this.flyingThing != null;
+                if (flag)
                 {
-                    Vector3 arg_2B_0 = this.DrawPos;
-                    bool flag4 = !this.DrawPos.ToIntVec3().IsValid;
-                    if (flag4)
+                    bool flag2 = this.flyingThing is Pawn;
+                    if (flag2)
                     {
-                        return;
-                    }
-                    Pawn pawn = this.flyingThing as Pawn;
-                    pawn.Drawer.DrawAt(this.DrawPos);
+                        Vector3 arg_2B_0 = this.DrawPos;
+                        bool flag4 = !this.DrawPos.ToIntVec3().IsValid;
+                        if (flag4)
+                        {
+                            return;
+                        }
+                        Pawn pawn = this.flyingThing as Pawn;
+                        pawn.Drawer.DrawAt(this.DrawPos);
 
+                    }
+                    else
+                    {
+                        Graphics.DrawMesh(MeshPool.plane10, this.DrawPos, this.ExactRotation, this.flyingThing.def.DrawMatSingle, 0);
+                    }
                 }
                 else
                 {
                     Graphics.DrawMesh(MeshPool.plane10, this.DrawPos, this.ExactRotation, this.flyingThing.def.DrawMatSingle, 0);
                 }
+                base.Comps_PostDraw();
             }
-            else
-            {
-                Graphics.DrawMesh(MeshPool.plane10, this.DrawPos, this.ExactRotation, this.flyingThing.def.DrawMatSingle, 0);
-            }
-            base.Comps_PostDraw();
         }
 
         private void DrawEffects(Vector3 effectVec)
@@ -356,70 +399,47 @@ namespace NaniteFactory
 
         protected virtual void Impact(Thing hitThing)
         {
-            bool flag = hitThing == null;
-            if (flag)
+            if (this.impactRadius > 0)
             {
-                Pawn pawn;
-                bool flag2 = (pawn = (base.Position.GetThingList(base.Map).FirstOrDefault((Thing x) => x == this.assignedTarget) as Pawn)) != null;
-                if (flag2)
+                if (this.isExplosive)
                 {
-                    hitThing = pawn;
+                    GenExplosion.DoExplosion(this.ExactPosition.ToIntVec3(), this.Map, this.impactRadius, this.impactDamageType, this.launcher as Pawn, this.explosionDamage, -1, this.impactDamageType.soundExplosion, def, null, null, null, 0f, 1, false, null, 0f, 0, 0.0f, true);
+                }
+                else
+                {
+                    this.impactCells = GenRadial.RadialCellsAround(this.Position, this.impactRadius, true).ToList();
                 }
             }
-            bool hasValue = this.impactDamage.HasValue;
-            if (hasValue)
+            Building_NaniteFactory factory = this.launcher as Building_NaniteFactory;
+            if (!factory.DestroyedOrNull())
             {
-                hitThing.TakeDamage(this.impactDamage.Value);
-            }
-            if (this.flyingThing is Pawn)
-            {
-                try
+                if (dispersalMethod == NaniteDispersal.Spray && !hitThing.DestroyedOrNull() && hitThing.Spawned)
                 {
-                    SoundDefOf.Ambient_AltitudeWind.sustainFadeoutTime.Equals(30.0f);
-
-                    GenSpawn.Spawn(this.flyingThing, base.Position, base.Map);
-                    Pawn p = this.flyingThing as Pawn;
-                    if (this.earlyImpact)
+                    this.sprayVec = SPT_Utility.GetVector(this.curvePoints[this.curvePoints.Count - 1], hitThing.DrawPos);
+                    this.impacted = true;
+                    this.ticksFollowingImpact = 35;
+                    if (naniteAction == NaniteActions.Repair)
                     {
-
+                        factory.RepairJobs.Add(hitThing);
                     }
-                    this.Destroy(DestroyMode.Vanish);
                 }
-                catch
+                else if (dispersalMethod == NaniteDispersal.ExplosionMist && !hitThing.DestroyedOrNull() && hitThing.Spawned)
                 {
-                    GenSpawn.Spawn(this.flyingThing, base.Position, base.Map);
-                    Pawn p = this.flyingThing as Pawn;
-
+                    this.sprayVec = SPT_Utility.GetVector(this.curvePoints[this.curvePoints.Count - 1], hitThing.DrawPos);
+                    this.impacted = true;
+                    this.ticksFollowingImpact = 15;
+                    if(naniteAction == NaniteActions.Repair)
+                    {
+                        factory.RepairJobs.Add(hitThing);
+                    }
+                }
+                else
+                {
                     this.Destroy(DestroyMode.Vanish);
                 }
             }
             else
             {
-                if (this.impactRadius > 0)
-                {
-                    if (this.isExplosive)
-                    {
-                        GenExplosion.DoExplosion(this.ExactPosition.ToIntVec3(), this.Map, this.impactRadius, this.impactDamageType, this.launcher as Pawn, this.explosionDamage, -1, this.impactDamageType.soundExplosion, def, null, null, null, 0f, 1, false, null, 0f, 0, 0.0f, true);
-                    }
-                    else
-                    {
-                        int num = GenRadial.NumCellsInRadius(this.impactRadius);
-                        IntVec3 curCell;
-                        for (int i = 0; i < num; i++)
-                        {
-                            curCell = this.ExactPosition.ToIntVec3() + GenRadial.RadialPattern[i];
-                            List<Thing> hitList = new List<Thing>();
-                            hitList = curCell.GetThingList(this.Map);
-                            for (int j = 0; j < hitList.Count; j++)
-                            {
-                                if (hitList[j] is Pawn && hitList[j] != this.pawn)
-                                {
-
-                                }
-                            }
-                        }
-                    }
-                }
                 this.Destroy(DestroyMode.Vanish);
             }
         }
