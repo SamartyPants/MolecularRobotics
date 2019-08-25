@@ -139,9 +139,10 @@ namespace NaniteFactory
         {
             this.Launch(launcher, base.Position.ToVector3Shifted(), targ, flyingThing, null);
         }
-
+  
         public void AdvancedLaunch(Thing launcher, ThingDef effectMote, int moteFrequencyTicks, float curveAmount, bool shouldSpin, Vector3 origin, LocalTargetInfo targ, Thing flyingThing, int flyingSpeed, bool isExplosion, int _impactDamage, float _impactRadius, NaniteDispersal dispersal, NaniteActions action, DamageDef damageType, DamageInfo? newDamageInfo = null)
         {
+
             this.naniteAction = action;
             this.dispersalMethod = dispersal;
             this.explosionDamage = _impactDamage;
@@ -157,6 +158,7 @@ namespace NaniteFactory
             this.curvePoints.Clear();
             this.Launch(launcher, origin, targ, flyingThing, newDamageInfo);
         }
+
 
         public void ExactLaunch(ThingDef effectMote, int moteFrequencyTicks, bool shouldSpin, List<Vector3> travelPath, Thing launcher, Vector3 origin, LocalTargetInfo targ, Thing flyingThing, int flyingSpeed, float _impactRadius, NaniteDispersal dispersal, NaniteActions action)
         {
@@ -181,9 +183,9 @@ namespace NaniteFactory
             {
                 flyingThing.DeSpawn();
             }
-            this.launcher = launcher;
-            this.trueOrigin = origin;
-            this.trueDestination = targ.Cell.ToVector3();
+            this.launcher = launcher; //Bench
+            this.trueOrigin = origin; //Bench
+            this.trueDestination = targ.Cell.ToVector3(); // Factory
             this.impactDamage = newDamageInfo;
             this.flyingThing = flyingThing;
             bool flag = targ.Thing != null;
@@ -399,6 +401,7 @@ namespace NaniteFactory
 
         protected virtual void Impact(Thing hitThing)
         {
+           
             if (this.impactRadius > 0)
             {
                 if (this.isExplosive)
@@ -407,14 +410,25 @@ namespace NaniteFactory
                 }
                 else
                 {
-                    this.impactCells = GenRadial.RadialCellsAround(this.Position, this.impactRadius, true).ToList();
+                    this.impactCells = GenRadial.RadialCellsAround(this.Position, this.impactRadius, true).ToList();                   
                 }
             }
-            Building_NaniteFactory factory = this.launcher as Building_NaniteFactory;
+            
+            //From nanite to bench // not null
+            //This.Launcher WHEN RETURNING HOME = Bench
+            //This.LAUNCHER when being sent to job = NF
+
+            Building_NaniteFactory factory = this.launcher as Building_NaniteFactory; // NULL // THING
+            Building_NaniteFactory returnFactory = hitThing as Building_NaniteFactory;
+
+
+            Log.Message("1");
             if (!factory.DestroyedOrNull())
             {
+                Log.Message("2");
                 if (dispersalMethod == NaniteDispersal.Spray && !hitThing.DestroyedOrNull() && hitThing.Spawned)
                 {
+                    Log.Message("3");
                     this.sprayVec = SPT_Utility.GetVector(this.curvePoints[this.curvePoints.Count - 1], hitThing.DrawPos);
                     this.impacted = true;
                     this.ticksFollowingImpact = 35;
@@ -422,25 +436,53 @@ namespace NaniteFactory
                     {
                         factory.RepairJobs.Add(hitThing);
                     }
+                    
                 }
                 else if (dispersalMethod == NaniteDispersal.ExplosionMist && !hitThing.DestroyedOrNull() && hitThing.Spawned)
                 {
+                    Log.Message("4");
                     this.sprayVec = SPT_Utility.GetVector(this.curvePoints[this.curvePoints.Count - 1], hitThing.DrawPos);
+                    Log.Message("44");
                     this.impacted = true;
+                    Log.Message("444");
                     this.ticksFollowingImpact = 15;
-                    if(naniteAction == NaniteActions.Repair)
+                    Log.Message("4444");
+                    if (naniteAction == NaniteActions.Repair)
                     {
+                        Log.Message("44444");
                         factory.RepairJobs.Add(hitThing);
+                        Log.Message("444444");
                     }
+          
                 }
+                
                 else
                 {
+                    Log.Message("5");
+
+                    this.Destroy(DestroyMode.Vanish);
+                }
+            }
+            else if (!returnFactory.DestroyedOrNull())
+            {
+
+                Log.Message("6");
+                if (naniteAction == NaniteActions.Return)
+                {
+                    Log.Message("MADE IT HERE!!!!");
+                    returnFactory.nanitesTraveling = false;
+                    Log.Message("SET FLAG DUMMY");
                     this.Destroy(DestroyMode.Vanish);
                 }
             }
             else
             {
-                this.Destroy(DestroyMode.Vanish);
+
+                //FIRE FIRE FIRE
+                Log.Message("HEY WE ARE HERE");
+                    this.Destroy(DestroyMode.Vanish);
+                
+                
             }
         }
     }

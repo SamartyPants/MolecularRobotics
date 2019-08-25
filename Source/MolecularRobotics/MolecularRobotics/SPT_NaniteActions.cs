@@ -12,6 +12,7 @@ namespace NaniteFactory
         Deconstruct,
         Consume,
         Farm,
+        Return,
         Mine,
         Destroy,
         Heal

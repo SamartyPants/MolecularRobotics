@@ -67,20 +67,24 @@ namespace NaniteFactory
             {
                 if(map.areaManager.Home != null && map.areaManager.Home.ActiveCells != null && map.areaManager.Home.ActiveCells.ToList().Contains(startingList[i].Position))
                 {
-                    if (startingList[i].HitPoints < startingList[i].MaxHitPoints)
+                    if(startingList[i].def != SPT_DefOf.SPT_NaniteFactory)
                     {
-                        if (exceptionList != null)
+                        if (startingList[i].HitPoints < startingList[i].MaxHitPoints)
                         {
-                            if (!exceptionList.Contains(startingList[i]))
+                            if (exceptionList != null)
+                            {
+                                if (!exceptionList.Contains(startingList[i]))
+                                {
+                                    tmpThing.Add(startingList[i]);
+                                }
+                            }
+                            else
                             {
                                 tmpThing.Add(startingList[i]);
                             }
                         }
-                        else
-                        {
-                            tmpThing.Add(startingList[i]);
-                        }
                     }
+                    
                 }
                 
             }

@@ -9,7 +9,7 @@ namespace NaniteFactory
     {       
         /* Repository of Defs for precaching and efficient access */
 
-        public static ThingDef TableNaniteFactory;
+        public static ThingDef SPT_NaniteFactory;
         public static ThingDef SPT_FlyingObject;
 
         //Motes

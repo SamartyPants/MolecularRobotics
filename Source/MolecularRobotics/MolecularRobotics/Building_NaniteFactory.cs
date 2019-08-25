@@ -36,12 +36,13 @@ namespace NaniteFactory
 
         //Used to determine available resources within a designated zone
         private static List<IntVec3> resourceCells = new List<IntVec3>();
-
+        List<IntVec3> ePathGlobal = null;
+        public bool nanitesTraveling = false;
         //How frequently the Nanite Factory checks for related jobs
         //Increasing intervals will reduce processor demand but slow down responsiveness
         //Intervals are offset to limit the amount of processor demand during active ticks
-        private int repairInterval = 11;
-        private int repairSearchInterval = 300;
+        private int repairInterval = 25;
+        private int repairSearchInterval = 100;
 
         private int constructInterval = 125;
         private int constructSearchInterval = 350;
@@ -432,6 +433,19 @@ namespace NaniteFactory
                         if (jobThing.HitPoints == jobThing.MaxHitPoints)
                         {
                             RepairJobs.Remove(tmpJobs[i]);
+
+                            //Do wireless delivery method...
+                            if (SPT_DefOf.SPT_NaniteWirelessAdaptation.IsFinished)
+                            {
+                                NaniteDelivery_ReturnHome(jobThing, NaniteDispersal.ExplosionMist, NaniteActions.Return);
+                            }
+                            else
+                            {
+                                
+                                NaniteDelivery_WiredReturnHome(jobThing, SPT_Utility.IntVec3List_To_Vector3List(this.ePathGlobal), NaniteDispersal.Spray, NaniteActions.Return);
+                            }
+                               
+                           
                         }
                     }
                 }
@@ -888,24 +902,28 @@ namespace NaniteFactory
                         //Need to check if the "Wireless" research is researched
 
                         //Delivery And Tracking                    
-                        if (SPT_DefOf.SPT_NaniteWirelessAdaptation.IsFinished)
+                        if (SPT_DefOf.SPT_NaniteWirelessAdaptation.IsFinished && this.nanitesTraveling == false)
                         {
                             //Do wireless delivery method...
                             NaniteDelivery_Wireless(targetThing, NaniteDispersal.ExplosionMist, NaniteActions.Repair);
                         }
                         else
                         {
-                            List<IntVec3> ePath = SPT_Utility.FindElectricPath(this, targetThing);
-
-                            if (ePath.Count > 0)
+                            if(this.nanitesTraveling == false)
                             {
-                                //Do wired delivery method
-                                NaniteDelivery_Wired(targetThing, SPT_Utility.IntVec3List_To_Vector3List(ePath), NaniteDispersal.Spray, NaniteActions.Repair);
+                                List<IntVec3> ePath = SPT_Utility.FindElectricPath(this, targetThing);
+                                this.ePathGlobal = ePath;
+                                if (ePath.Count > 0)
+                                {
+                                    //Do wired delivery method
+                                    NaniteDelivery_Wired(targetThing, SPT_Utility.IntVec3List_To_Vector3List(ePath), NaniteDispersal.Spray, NaniteActions.Repair);
+                                }
+                                else
+                                {
+                                    Log.Message("no path found");
+                                }
                             }
-                            else
-                            {
-                                Log.Message("no path found");
-                            }
+                            
                         }
 
                     }
@@ -951,6 +969,7 @@ namespace NaniteFactory
             bool flag = t.Cell != default(IntVec3);
             if (flag)
             {
+                this.nanitesTraveling = true;
                 Thing launchedThing = new Thing()
                 {
                     def = SPT_DefOf.SPT_FlyingObject
@@ -965,32 +984,83 @@ namespace NaniteFactory
             }
         }
 
-        public void NaniteDelivery_Wireless(LocalTargetInfo target, NaniteDispersal dispersal, NaniteActions action)
+        public void NaniteDelivery_Wireless(LocalTargetInfo targ, NaniteDispersal dispersal, NaniteActions action)
         {
-            SoundInfo info = SoundInfo.InMap(new TargetInfo(target.Cell, this.Map, false), MaintenanceType.None);
+            SoundInfo info = SoundInfo.InMap(new TargetInfo(targ.Cell, this.Map, false), MaintenanceType.None);
             info.pitchFactor = 1.3f;
             info.volumeFactor = .6f;
             SPT_DefOf.Mortar_LaunchA.PlayOneShot(info);
-            LocalTargetInfo t = target;
-            bool flag = t.Cell != default(IntVec3);
+            this.nanitesTraveling = true;
+            LocalTargetInfo target = targ;
+            bool flag = target.Cell != default(IntVec3);
             if (flag)
             {
                 Thing launchedThing = new Thing()
                 {
                     def = SPT_DefOf.SPT_FlyingObject
                 };
-                Thing launcher = this;
+                //Thing launcher = this;
                 SPT_FlyingObject flyingObject = (SPT_FlyingObject)GenSpawn.Spawn(SPT_DefOf.SPT_FlyingObject, this.Position, this.Map);
                 //larger curve means larger loop, 90 curve would initially launch at a 90deg angle to the direction of the target
                 //provide a mote and mote frequency to have additional effects while in flight
-                flyingObject.AdvancedLaunch(this, null, 0, Rand.Range(40, 60), true, this.DrawPos, t, launchedThing, 40, false, 0, 2, dispersal, action, null, null);  
+                flyingObject.AdvancedLaunch(this, null, 0, Rand.Range(20, 40), true, this.DrawPos, target, launchedThing, 5, false, 0, 2, dispersal, action, null, null );  
                 //LongEventHandler.QueueLongEvent(delegate
                 //{
 
                 //}, "LaunchingFlyer", false, null);
             }
         }
+        public void NaniteDelivery_WiredReturnHome(LocalTargetInfo targ, List<Vector3> path, NaniteDispersal dispersal, NaniteActions action)
+        {
+            path.Reverse();
+            LocalTargetInfo target = this;
 
+            bool flag = target.Cell != default(IntVec3);
+            if (flag)
+            {
+                this.nanitesTraveling = true;
+                Thing launchedThing = new Thing()
+                {
+                    def = SPT_DefOf.SPT_FlyingObject
+                };
+                Thing launcher = targ.Thing;
+                SPT_FlyingObject flyingObject = (SPT_FlyingObject)GenSpawn.Spawn(SPT_DefOf.SPT_FlyingObject, targ.Thing.Position, this.Map);
+                flyingObject.ExactLaunch(null, 0, false, path, launcher, path[0], this, launchedThing, 10, 0, dispersal, action);
+               
+            }
+        }
+        public void NaniteDelivery_ReturnHome(LocalTargetInfo targ, NaniteDispersal dispersal, NaniteActions action)
+        {
+            //NaniteActions.Return
+            //TARG = BENCH
+            //THIS = NF
+
+            LocalTargetInfo target = this;
+            SoundInfo info = SoundInfo.InMap(new TargetInfo(targ.Cell, this.Map, false), MaintenanceType.None);
+            info.pitchFactor = 1.3f;
+            info.volumeFactor = .6f;
+            SPT_DefOf.Mortar_LaunchA.PlayOneShot(info);
+            
+          
+            bool flag = target.Cell != default(IntVec3);
+            if (flag)
+            {
+                this.nanitesTraveling = true;
+                Thing launchedThing = new Thing()
+                {
+                    def = SPT_DefOf.SPT_FlyingObject
+                };
+                //Thing launcher = this;
+                SPT_FlyingObject flyingObject = (SPT_FlyingObject)GenSpawn.Spawn(SPT_DefOf.SPT_FlyingObject, targ.Thing.Position, this.Map);
+                //larger curve means larger loop, 90 curve would initially launch at a 90deg angle to the direction of the target
+                //provide a mote and mote frequency to have additional effects while in flight
+                flyingObject.AdvancedLaunch(targ.Thing, null, 0, Rand.Range(20, 40), true, targ.Thing.DrawPos, target, launchedThing, 5, false, 0, 2, dispersal, action, null, null);
+                //LongEventHandler.QueueLongEvent(delegate
+                //{
+
+                //}, "LaunchingFlyer", false, null);
+            }
+        }
 
         //Create resource stockpile
         public IEnumerable<IntVec3> ResourceCells
@@ -1005,6 +1075,7 @@ namespace NaniteFactory
         public bool UseFixedConstruction { get; private set; }
         public bool UseFixedRepairing { get; private set; }
         public bool UseFixedHealing { get; private set; }
+        
 
         private void MakeMatchingStockpile()
         {
