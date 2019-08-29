@@ -38,6 +38,7 @@ namespace NaniteFactory
         private static List<IntVec3> resourceCells = new List<IntVec3>();
         List<IntVec3> ePathGlobal = null;
         public bool nanitesTraveling = false;
+        public Thing tempThingToDeconstruct = null;
         //How frequently the Nanite Factory checks for related jobs
         //Increasing intervals will reduce processor demand but slow down responsiveness
         //Intervals are offset to limit the amount of processor demand during active ticks
@@ -481,8 +482,20 @@ namespace NaniteFactory
                             //Once thing is max work, remove thing from job list
                             if (jobThing.WorkLeft == 0.0)
                             {
-                                jobThing.CompleteConstruction(this.Map.mapPawns.AllPawnsSpawned.RandomElement() as Pawn);
-                                ConstructJobs.Remove(tmpJobs[i]);
+                                ConstructJobs.Remove(jobThing);
+                                //Do wireless delivery method...
+                                if (SPT_DefOf.SPT_NaniteWirelessAdaptation.IsFinished)
+                                {
+                                    jobThing.CompleteConstruction(this.Map.mapPawns.AllPawnsSpawned.RandomElement() as Pawn);
+                                    NaniteDelivery_ReturnHome(jobThing, NaniteDispersal.ExplosionMist, NaniteActions.Return);
+                                }
+                                else
+                                {
+                                    jobThing.CompleteConstruction(this.Map.mapPawns.AllPawnsSpawned.RandomElement() as Pawn);
+                                    NaniteDelivery_WiredReturnHome(jobThing, SPT_Utility.IntVec3List_To_Vector3List(this.ePathGlobal), NaniteDispersal.Spray, NaniteActions.Return);
+                                }
+                            
+                              
                             }
                         }
                     }
@@ -506,15 +519,27 @@ namespace NaniteFactory
                     //if that thing is not null (error checking)
                     if (jobThing != null)
                     {
-                            //There is nothing fancy here yet, we need to revisit how we handle this later.                     
-                            jobThing.Destroy(DestroyMode.Deconstruct);
-                            //Draw Visual On thing (Red sparkles temporary)
-                            Vector3 rndVec = jobThing.DrawPos;
+                        //There is nothing fancy here yet, we need to revisit how we handle this later.                     
+                        this.tempThingToDeconstruct = jobThing;
+                         //Draw Visual On thing (Red sparkles temporary)
+                         Vector3 rndVec = jobThing.DrawPos;
                             rndVec.x += (Rand.Range(-.3f, .3f));
                             rndVec.z += (Rand.Range(-.3f, .3f));
                             SPT_Utility.ThrowGenericMote(SPT_DefOf.SPT_Mote_NaniteWorking, rndVec, jobThing.Map, Rand.Range(.02f, .2f), .1f, .3f, .3f, Rand.Range(-300, 300), 0, 0, Rand.Range(0, 360));
 
-                            DeconstructJobs.Remove(tmpJobs[i]);      
+                       
+                            if (SPT_DefOf.SPT_NaniteWirelessAdaptation.IsFinished)
+                            {                           
+                                NaniteDelivery_ReturnHome(jobThing, NaniteDispersal.ExplosionMist, NaniteActions.Deconstruct);
+                                jobThing.Destroy(DestroyMode.Deconstruct);
+                            }
+                            else
+                            {
+                                  NaniteDelivery_Wired(jobThing,SPT_Utility.IntVec3List_To_Vector3List(this.ePathGlobal), NaniteDispersal.Spray, NaniteActions.Deconstruct);
+                                 
+                            }
+                         
+                        
                     }
                 }
             }
@@ -848,14 +873,36 @@ namespace NaniteFactory
             List<Thing> deconstructableThings = SPT_Utility.FindDeconstructionBuildings(this.Map, this.Faction);
             if (deconstructableThings != null)
             {
+                Thing targetThing = deconstructableThings.Except(DeconstructJobs).RandomElement();
                 if (deconstructableThings.Count > 0)
-                {
-
-                    Thing targetThing = deconstructableThings.Except(DeconstructJobs).RandomElement();
+                {       
                     if (targetThing != null)
                     {
-                        currentThingJob = targetThing;
-                        DeconstructJobs.Add(targetThing);
+                        //Delivery And Tracking                    
+                        if (SPT_DefOf.SPT_NaniteWirelessAdaptation.IsFinished && this.nanitesTraveling == false)
+                        {
+                            //Do wireless delivery method...
+                            NaniteDelivery_Wireless(targetThing, NaniteDispersal.ExplosionMist, NaniteActions.Deconstruct);
+                        }
+                        else
+                        {
+                            if (this.nanitesTraveling == false)
+                            {
+                                List<IntVec3> ePath = SPT_Utility.FindElectricPath(this, targetThing);
+                                this.ePathGlobal = ePath;
+                                if (ePath.Count > 0)
+                                {
+                                    //Do wired delivery method
+                                    NaniteDelivery_Wired(targetThing, SPT_Utility.IntVec3List_To_Vector3List(ePath), NaniteDispersal.Spray, NaniteActions.Deconstruct);
+                                }
+                                else
+                                {
+                                    Log.Message("no path found");
+                                }
+                            }
+
+                        }
+                      
                     }
                     else
                     {
@@ -870,19 +917,40 @@ namespace NaniteFactory
             List<Frame> constructableBuildings = SPT_Utility.FindConstructionBuildings(this.Map, this.Faction);
             if (constructableBuildings != null)
             {
+                Frame targetThing = constructableBuildings.Except(ConstructJobs).RandomElement();
                 if (constructableBuildings.Count > 0)
-                {
-                
-                        Frame targetThing = constructableBuildings.Except(ConstructJobs).RandomElement();
-                        if (targetThing != null)
+                {       
+                   if (targetThing != null)
+                   {
+                        //Delivery And Tracking                    
+                        if (SPT_DefOf.SPT_NaniteWirelessAdaptation.IsFinished && this.nanitesTraveling == false)
                         {
-                            currentFrameJob = targetThing;
-                            ConstructJobs.Add(targetThing);
+                            //Do wireless delivery method...
+                            NaniteDelivery_Wireless(targetThing, NaniteDispersal.ExplosionMist, NaniteActions.Construct);
                         }
                         else
                         {
-                            Log.Message("Nothing new found to construct");
+                            if (this.nanitesTraveling == false)
+                            {
+                                List<IntVec3> ePath = SPT_Utility.FindElectricPath(this, targetThing);
+                                this.ePathGlobal = ePath;
+                                if (ePath.Count > 0)
+                                {
+                                    //Do wired delivery method
+                                    NaniteDelivery_Wired(targetThing, SPT_Utility.IntVec3List_To_Vector3List(ePath), NaniteDispersal.Spray, NaniteActions.Construct);
+                                }
+                                else
+                                {
+                                    Log.Message("no path found");
+                                }
+                            }
+
                         }
+                    }
+                   else
+                   {
+                      Log.Message("Nothing new found to construct");
+                   }
                                    
                 }
             }
@@ -1029,6 +1097,8 @@ namespace NaniteFactory
                
             }
         }
+       
+
         public void NaniteDelivery_ReturnHome(LocalTargetInfo targ, NaniteDispersal dispersal, NaniteActions action)
         {
             //NaniteActions.Return
@@ -1061,6 +1131,7 @@ namespace NaniteFactory
                 //}, "LaunchingFlyer", false, null);
             }
         }
+
 
         //Create resource stockpile
         public IEnumerable<IntVec3> ResourceCells
