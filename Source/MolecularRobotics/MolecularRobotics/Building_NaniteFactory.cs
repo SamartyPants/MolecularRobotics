@@ -538,21 +538,43 @@ namespace NaniteFactory
                         this.tempThingToDeconstruct = jobThing;
                          //Draw Visual On thing (Red sparkles temporary)
                          Vector3 rndVec = jobThing.DrawPos;
-                            rndVec.x += (Rand.Range(-.3f, .3f));
-                            rndVec.z += (Rand.Range(-.3f, .3f));
-                            SPT_Utility.ThrowGenericMote(SPT_DefOf.SPT_Mote_NaniteWorking, rndVec, jobThing.Map, Rand.Range(.02f, .2f), .1f, .3f, .3f, Rand.Range(-300, 300), 0, 0, Rand.Range(0, 360));
+                        rndVec.x += (Rand.Range(-.3f, .3f));
+                        rndVec.z += (Rand.Range(-.3f, .3f));
+                        SPT_Utility.ThrowGenericMote(SPT_DefOf.SPT_Mote_NaniteWorking, rndVec, jobThing.Map, Rand.Range(.02f, .2f), .1f, .3f, .3f, Rand.Range(-300, 300), 0, 0, Rand.Range(0, 360));
 
                        
-                            if (SPT_DefOf.SPT_NaniteWirelessAdaptation.IsFinished)
-                            {                           
-                                NaniteDelivery_ReturnHome(jobThing, NaniteDispersal.ExplosionMist, NaniteActions.Deconstruct);
-                                jobThing.Destroy(DestroyMode.Deconstruct);
+                        if (SPT_DefOf.SPT_NaniteWirelessAdaptation.IsFinished)
+                        {                           
+                            NaniteDelivery_ReturnHome(jobThing, NaniteDispersal.ExplosionMist, NaniteActions.Return);
+                            jobThing.Destroy(DestroyMode.Deconstruct);
+                        }
+                        else
+                        {
+                            if (ePathGlobal != null && ePathGlobal.Count > 0)
+                            {
+                                NaniteDelivery_WiredReturnHome(jobThing, SPT_Utility.IntVec3List_To_Vector3List(this.ePathGlobal), NaniteDispersal.Spray, NaniteActions.Return);
                             }
                             else
                             {
-                                  NaniteDelivery_Wired(jobThing,SPT_Utility.IntVec3List_To_Vector3List(this.ePathGlobal), NaniteDispersal.Spray, NaniteActions.Deconstruct);
-                                 
+                                List<IntVec3> ePath = SPT_Utility.FindElectricPath(jobThing, this);
+                                ePath.Reverse(); //double reverse...
+                                if (ePath != null && ePath.Count > 0)
+                                {
+                                    NaniteDelivery_WiredReturnHome(jobThing, SPT_Utility.IntVec3List_To_Vector3List(this.ePathGlobal), NaniteDispersal.Spray, NaniteActions.Return);
+                                }
+                                else
+                                {
+                                    Log.Message("failed wired return - no path");
+                                }
                             }
+                            //You might need to consider adding additional deconstruction actions here, like return of resources
+                            //If you want the resources to be returned only after the effects end, you will need to pass those resources into the launched thing as a list of things
+                            //then spawn those things at the end of the flying object
+                            //NaniteDelivery_WiredReturnHome(jobThing, SPT_Utility.IntVec3List_To_Vector3List(this.ePathGlobal), NaniteDispersal.Spray, NaniteActions.Return);
+                            jobThing.Destroy(DestroyMode.Deconstruct);
+                            //NaniteDelivery_Wired(jobThing,SPT_Utility.IntVec3List_To_Vector3List(this.ePathGlobal), NaniteDispersal.Spray, NaniteActions.Deconstruct);
+
+                        }
                          
                         
                     }
@@ -885,46 +907,47 @@ namespace NaniteFactory
          */
         private void sendNanitesDeconstruct()
         {
-            List<Thing> deconstructableThings = SPT_Utility.FindDeconstructionBuildings(this.Map, this.Faction);
-            if (deconstructableThings != null)
+            //You will want to consider a delay or something so that the deconstruct action is not instant as soon as it gets assigned
+            List<Thing> deconstructableThings = SPT_Utility.FindDeconstructionBuildings(this.Map, this.Faction, DeconstructJobs);
+            if (deconstructableThings != null && deconstructableThings.Count > 0)
             {
-                Thing targetThing = deconstructableThings.Except(DeconstructJobs).RandomElement();
-                if (deconstructableThings.Count > 0)
-                {       
-                    if (targetThing != null)
+                Thing targetThing = deconstructableThings.Except(DeconstructJobs).RandomElement();    
+                if (targetThing != null)
+                {
+                    //Delivery And Tracking                    
+                    if (SPT_DefOf.SPT_NaniteWirelessAdaptation.IsFinished && this.nanitesTraveling == false)
                     {
-                        //Delivery And Tracking                    
-                        if (SPT_DefOf.SPT_NaniteWirelessAdaptation.IsFinished && this.nanitesTraveling == false)
-                        {
-                            //Do wireless delivery method...
-                            NaniteDelivery_Wireless(targetThing, NaniteDispersal.ExplosionMist, NaniteActions.Deconstruct);
-                        }
-                        else
-                        {
-                            if (this.nanitesTraveling == false)
-                            {
-                                List<IntVec3> ePath = SPT_Utility.FindElectricPath(this, targetThing);
-                                this.ePathGlobal = ePath;
-                                if (ePath.Count > 0)
-                                {
-                                    //Do wired delivery method
-                                    NaniteDelivery_Wired(targetThing, SPT_Utility.IntVec3List_To_Vector3List(ePath), NaniteDispersal.Spray, NaniteActions.Deconstruct);
-                                }
-                                else
-                                {
-                                    Log.Message("no path found");
-                                }
-                            }
-
-                        }
-                      
+                        //Do wireless delivery method...
+                        this.nanitesTraveling = true;
+                        NaniteDelivery_Wireless(targetThing, NaniteDispersal.ExplosionMist, NaniteActions.Deconstruct);
                     }
                     else
                     {
-                        Log.Message("Nothing new found to deconstruct");
-                    }
+                        if (this.nanitesTraveling == false)
+                        {
+                            List<IntVec3> ePath = SPT_Utility.FindElectricPath(this, targetThing);
+                            this.ePathGlobal = ePath;
+                            if (ePath.Count > 0)
+                            {
+                                //Do wired delivery method
+                                NaniteDelivery_Wired(targetThing, SPT_Utility.IntVec3List_To_Vector3List(ePath), NaniteDispersal.Spray, NaniteActions.Deconstruct);
+                                this.nanitesTraveling = true;
+                            }
+                            else
+                            {
+                                Log.Message("no path found");
+                            }
+                        }
 
+                    }
+                      
                 }
+                else
+                {
+                    Log.Message("Nothing new found to deconstruct");
+                }
+
+                
             }
         }
         private void sendNanitesConstruct()
@@ -1139,7 +1162,7 @@ namespace NaniteFactory
                 SPT_FlyingObject flyingObject = (SPT_FlyingObject)GenSpawn.Spawn(SPT_DefOf.SPT_FlyingObject, targ.Thing.Position, this.Map);
                 //larger curve means larger loop, 90 curve would initially launch at a 90deg angle to the direction of the target
                 //provide a mote and mote frequency to have additional effects while in flight
-                flyingObject.AdvancedLaunch(targ.Thing, null, 0, Rand.Range(20, 40), true, targ.Thing.DrawPos, target, launchedThing, 5, false, 0, 2, dispersal, action, null, null);
+                flyingObject.AdvancedLaunch(this, null, 0, Rand.Range(20, 40), true, targ.Thing.DrawPos, target, launchedThing, 5, false, 0, 2, dispersal, action, null, null);
                 //LongEventHandler.QueueLongEvent(delegate
                 //{
 

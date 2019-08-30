@@ -183,7 +183,14 @@ namespace NaniteFactory
             {
                 flyingThing.DeSpawn();
             }
-            this.launcher = launcher; //Bench
+            if (launcher == null)
+            {
+                this.launcher = targ.Thing;
+            }
+            else
+            {
+                this.launcher = launcher; //Bench
+            }
             this.trueOrigin = origin; //Bench
             this.trueDestination = targ.Cell.ToVector3(); // Factory
             this.impactDamage = newDamageInfo;
@@ -295,14 +302,14 @@ namespace NaniteFactory
                     DrawEffects(exactPosition);
                 }
                 this.ticksToImpact--;
-                bool flag = !this.ExactPosition.InBounds(base.Map);
+                bool flag = !this.ExactPosition.InBounds(this.Map);
                 if (flag)
                 {
                     this.ticksToImpact++;
                     base.Position = this.ExactPosition.ToIntVec3();
                     this.Destroy(DestroyMode.Vanish);
                 }
-                else if (this.dispersalMethod == NaniteDispersal.Spray && !this.ExactPosition.ToIntVec3().GetTransmitter(this.Map).TransmitsPowerNow)
+                else if (this.dispersalMethod == NaniteDispersal.Spray && this.ExactPosition.ToIntVec3().GetTransmitter(this.Map) != null && this.ExactPosition.ToIntVec3().GetTransmitter(this.Map).TransmitsPowerNow)
                 {
                     this.earlyImpact = true;
                     this.impactForce = (this.DestinationCell - this.ExactPosition.ToIntVec3()).LengthHorizontal + (this.speed * .2f);

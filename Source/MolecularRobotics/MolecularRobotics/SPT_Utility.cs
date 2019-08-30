@@ -91,7 +91,7 @@ namespace NaniteFactory
             return tmpThing;
         }
         //Method responsible for finding deconstruction designations within home area
-        public static List<Thing> FindDeconstructionBuildings(Map map, Faction faction)
+        public static List<Thing> FindDeconstructionBuildings(Map map, Faction faction, List<Thing> exceptionList = null)
         {
 
             List<Designation> startingList = map.designationManager.SpawnedDesignationsOfDef(DesignationDefOf.Deconstruct).ToList();   
@@ -101,9 +101,18 @@ namespace NaniteFactory
             {   
                 if (map.areaManager.Home != null && map.areaManager.Home.ActiveCells != null && map.areaManager.Home.ActiveCells.ToList().Contains(startingList[i].target.Thing.Position) && startingList[i].target.Thing is Thing)
                 {
-                    tmpThing.Add(startingList[i].target.Thing as Thing);
+                    if (exceptionList != null)
+                    {
+                        if(!exceptionList.Contains(startingList[i].target.Thing))
+                        {
+                            tmpThing.Add(startingList[i].target.Thing as Thing);
+                        }
+                    }
+                    else
+                    {
+                        tmpThing.Add(startingList[i].target.Thing as Thing);
+                    }                    
                 }
-
             }
             return tmpThing;
         }
