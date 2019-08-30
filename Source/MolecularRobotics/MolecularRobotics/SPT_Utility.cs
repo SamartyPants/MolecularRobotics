@@ -201,23 +201,32 @@ namespace NaniteFactory
                         List<IntVec3> cellList = GenRadial.RadialCellsAround(pathFinder[j].currentCell, 1f, true).ToList();
                         List<IntVec3> validCells = new List<IntVec3>();
                         validCells.Clear();
+                        Log.Message(cellList.Count.ToString());
                         for (int k = 0; k < cellList.Count; k++)
                         {
+                            //CELLLIST is all the cells around the CURRENT cell.
+                         
+                           
                             if (!allCells.Contains(cellList[k]) && CellHasConduit(cellList[k], map))
                             {
+                                //IF WE FIND A CONDUIT ADD THAT CELL TO A LIST "ALLCELLS"
+                                //AND TO ANOTHER LIST "VALIDCELLS"
                                 allCells.Add(cellList[k]);
                                 validCells.Add(cellList[k]);
                             }
                         }
                         if (validCells.Count > 0)
                         {
+                            //IF WE FOUND MORE THAN 1 "VALID" cell around the "CURRENTCELL" we loop through those cells
                             for (int k = 0; k < validCells.Count; k++)
                             {
                                 if (k == 0)
                                 {
+                                    //Check the first valid cell
                                     //continue path in a single direction; additional possible paths create a branch
                                     pathFinder[j].pathList.Add(validCells[k]);
                                     pathFinder[j] = new EPath(pathFinder[j].pathParent, pathFinder[j].pathParentSplitIndex, false, validCells[k], pathFinder[j].pathList);
+
                                     if ((to.Position - validCells[k]).LengthHorizontal <= 4)
                                     {
                                         pathFound = true;
