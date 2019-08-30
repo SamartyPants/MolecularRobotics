@@ -432,8 +432,7 @@ namespace NaniteFactory
 
                         //Once thing is max health, remove thing from job list
                         if (jobThing.HitPoints == jobThing.MaxHitPoints)
-                        {
-                            RepairJobs.Remove(tmpJobs[i]);
+                        {                           
 
                             //Do wireless delivery method...
                             if (SPT_DefOf.SPT_NaniteWirelessAdaptation.IsFinished)
@@ -442,11 +441,27 @@ namespace NaniteFactory
                             }
                             else
                             {
-                                
-                                NaniteDelivery_WiredReturnHome(jobThing, SPT_Utility.IntVec3List_To_Vector3List(this.ePathGlobal), NaniteDispersal.Spray, NaniteActions.Return);
+                                if (ePathGlobal != null && ePathGlobal.Count > 0)
+                                {
+                                    NaniteDelivery_WiredReturnHome(jobThing, SPT_Utility.IntVec3List_To_Vector3List(this.ePathGlobal), NaniteDispersal.Spray, NaniteActions.Return);
+                                }
+                                else
+                                {
+                                    List<IntVec3> ePath = SPT_Utility.FindElectricPath(jobThing, this);
+                                    ePath.Reverse(); //double reverse...
+                                    if (ePath != null && ePath.Count > 0)
+                                    {
+                                        NaniteDelivery_WiredReturnHome(jobThing, SPT_Utility.IntVec3List_To_Vector3List(this.ePathGlobal), NaniteDispersal.Spray, NaniteActions.Return);
+                                    }
+                                    else
+                                    {
+                                        Log.Message("failed wired return - no path");
+                                    }
+                                }
                             }
-                               
-                           
+
+                            RepairJobs.Remove(tmpJobs[i]);
+
                         }
                     }
                 }
@@ -1093,7 +1108,7 @@ namespace NaniteFactory
                 };
                 Thing launcher = targ.Thing;
                 SPT_FlyingObject flyingObject = (SPT_FlyingObject)GenSpawn.Spawn(SPT_DefOf.SPT_FlyingObject, targ.Thing.Position, this.Map);
-                flyingObject.ExactLaunch(null, 0, false, path, launcher, path[0], this, launchedThing, 10, 0, dispersal, action);
+                flyingObject.ExactLaunch(null, 0, false, path, this, path[0], this, launchedThing, 10, 0, dispersal, action);
                
             }
         }

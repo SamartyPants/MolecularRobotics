@@ -173,7 +173,6 @@ namespace NaniteFactory
             this.curveVariance = 1;
             this.Launch(launcher, origin, targ, flyingThing, null);         
         }
-       
 
         public void Launch(Thing launcher, Vector3 origin, LocalTargetInfo targ, Thing flyingThing, DamageInfo? newDamageInfo = null)
         {
@@ -214,45 +213,46 @@ namespace NaniteFactory
             this.ticksToImpact = this.StartingTicksToImpact;
             this.Initialize();
         }
-        public void LaunchNoThing(IntVec3 launcher, Vector3 origin, LocalTargetInfo targ, Thing flyingThing, DamageInfo? newDamageInfo = null)
-        {
-            //Log.Message("launching object");
-            bool spawned = flyingThing.Spawned;
-            //this.pawn = launcher as Pawn;
-            if (spawned)
-            {
-                flyingThing.DeSpawn();
-            }
-            this.launcher.Position = launcher; //Bench
-            this.trueOrigin = origin; //Bench
-            this.trueDestination = targ.Cell.ToVector3(); // Factory
-            this.impactDamage = newDamageInfo;
-            this.flyingThing = flyingThing;
-            bool flag = targ.Thing != null;
-            if (flag)
-            {
-                this.assignedTarget = targ.Thing;
-            }
-            this.speed = this.speed * this.force;
-            this.origin = origin;
-            if (this.curveVariance > 0 && this.curvePoints.Count == 0)
-            {
-                CalculateCurvePoints(this.trueOrigin, this.trueDestination, this.curveVariance);
-                this.destinationCurvePoint++;
-                this.destination = this.curvePoints[this.destinationCurvePoint];
-            }
-            else if (this.curveVariance > 0 && this.curvePoints.Count > 0)
-            {
-                this.destinationCurvePoint++;
-                this.destination = this.curvePoints[this.destinationCurvePoint];
-            }
-            else
-            {
-                this.destination = this.trueDestination;
-            }
-            this.ticksToImpact = this.StartingTicksToImpact;
-            this.Initialize();
-        }
+
+        //public void LaunchNoThing(IntVec3 launcher, Vector3 origin, LocalTargetInfo targ, Thing flyingThing, DamageInfo? newDamageInfo = null)
+        //{
+        //    //Log.Message("launching object");
+        //    bool spawned = flyingThing.Spawned;
+        //    //this.pawn = launcher as Pawn;
+        //    if (spawned)
+        //    {
+        //        flyingThing.DeSpawn();
+        //    }
+        //    this.launcher.Position = launcher; //Bench
+        //    this.trueOrigin = origin; //Bench
+        //    this.trueDestination = targ.Cell.ToVector3(); // Factory
+        //    this.impactDamage = newDamageInfo;
+        //    this.flyingThing = flyingThing;
+        //    bool flag = targ.Thing != null;
+        //    if (flag)
+        //    {
+        //        this.assignedTarget = targ.Thing;
+        //    }
+        //    this.speed = this.speed * this.force;
+        //    this.origin = origin;
+        //    if (this.curveVariance > 0 && this.curvePoints.Count == 0)
+        //    {
+        //        CalculateCurvePoints(this.trueOrigin, this.trueDestination, this.curveVariance);
+        //        this.destinationCurvePoint++;
+        //        this.destination = this.curvePoints[this.destinationCurvePoint];
+        //    }
+        //    else if (this.curveVariance > 0 && this.curvePoints.Count > 0)
+        //    {
+        //        this.destinationCurvePoint++;
+        //        this.destination = this.curvePoints[this.destinationCurvePoint];
+        //    }
+        //    else
+        //    {
+        //        this.destination = this.trueDestination;
+        //    }
+        //    this.ticksToImpact = this.StartingTicksToImpact;
+        //    this.Initialize();
+        //}
 
         public void CalculateCurvePoints(Vector3 start, Vector3 end, float variance)
         {
@@ -470,6 +470,10 @@ namespace NaniteFactory
             if (!factory.DestroyedOrNull())
             {
                 Log.Message("2");
+                if (naniteAction == NaniteActions.Return)
+                {
+                    factory.nanitesTraveling = false;
+                }
                 if (dispersalMethod == NaniteDispersal.Spray && !hitThing.DestroyedOrNull() && hitThing.Spawned)
                 {
                     Log.Message("3");
@@ -512,8 +516,7 @@ namespace NaniteFactory
                         factory.DeconstructJobs.Add(hitThing);
                     }
 
-                }
-                
+                }                
                 else
                 {
                     Log.Message("5");
