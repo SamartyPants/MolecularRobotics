@@ -521,14 +521,14 @@ namespace NaniteFactory
                     this.Destroy(DestroyMode.Vanish);
                 }
             }
-            else if (!returnFactory.DestroyedOrNull())
+            else if (!returnFactory.DestroyedOrNull() && returnFactory.def == SPT_DefOf.SPT_NaniteFactory)
             {
 
-                if (naniteAction == NaniteActions.Return)
-                {
+                //if (naniteAction == NaniteActions.Return)
+                //{
                     returnFactory.nanitesTraveling = false;
                     this.Destroy(DestroyMode.Vanish);
-                }
+                //}
                 
             }
             else
