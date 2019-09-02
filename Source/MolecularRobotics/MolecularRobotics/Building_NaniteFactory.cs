@@ -983,6 +983,7 @@ namespace NaniteFactory
                                 this.ePathGlobal = ePath;
                                 if (ePath.Count > 0)
                                 {
+                                    Log.Message("doing repair job with " + ePath.Count + "points");
                                     //Do wired delivery method
                                     NaniteDelivery_Wired(targetThing, SPT_Utility.IntVec3List_To_Vector3List(ePath), NaniteDispersal.Spray, NaniteActions.Repair);
                                 }

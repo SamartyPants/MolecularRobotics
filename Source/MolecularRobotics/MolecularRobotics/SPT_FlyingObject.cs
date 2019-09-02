@@ -523,9 +523,12 @@ namespace NaniteFactory
             }
             else if (!returnFactory.DestroyedOrNull())
             {
-              
-                returnFactory.nanitesTraveling = false;               
+
+                if (naniteAction == NaniteActions.Return)
+                {
+                    returnFactory.nanitesTraveling = false;
                     this.Destroy(DestroyMode.Vanish);
+                }
                 
             }
             else
